@@ -1,27 +1,33 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
-    <PropertyGroup>
-        <TargetFramework>net48</TargetFramework>
-        <OutputType>Library</OutputType>
-        <RootNamespace>Eliot.Extensions.NativesTableListGenerator</RootNamespace>
-        <AssemblyName>Eliot.Extensions.NativesTableListGenerator</AssemblyName>
-        <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
-        <UseWindowsForms>true</UseWindowsForms>
-        <ImportWindowsDesktopTargets>true</ImportWindowsDesktopTargets>
-        <EmbeddedResourceUseDependentUponConvention>true</EmbeddedResourceUseDependentUponConvention>
-        <Version>$(VersionPrefix)1.0.1</Version>
-    </PropertyGroup>
-    <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-        <Optimize>true</Optimize>
-        <WarningLevel>2</WarningLevel>
-    </PropertyGroup>
-    <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-		<DebugType>none</DebugType>
-		<UseVSHostingProcess>false</UseVSHostingProcess>
-    </PropertyGroup>
-    <ItemGroup>
-        <ProjectReference Include="..\UE Explorer\UEExplorer.csproj">
-          <ReferenceOutputAssembly>True</ReferenceOutputAssembly>
-        </ProjectReference>
-        <ProjectReference Include="..\UELib\src\Eliot.UELib.csproj" />
-    </ItemGroup>
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net48</TargetFramework>
+    <OutputType>Library</OutputType>
+    <EnableDynamicLoading>true</EnableDynamicLoading>
+    <RootNamespace>Eliot.Extensions.NativesTableListGenerator</RootNamespace>
+    <AssemblyName>Eliot.Extensions.NativesTableListGenerator</AssemblyName>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ImportWindowsDesktopTargets>true</ImportWindowsDesktopTargets>
+    <IsPublishable>false</IsPublishable>
+    <EmbeddedResourceUseDependentUponConvention>true</EmbeddedResourceUseDependentUponConvention>
+    <Version>$(VersionPrefix)1.0.2</Version>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <Optimize>true</Optimize>
+    <WarningLevel>2</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>none</DebugType>
+    <UseVSHostingProcess>false</UseVSHostingProcess>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\UE Explorer\UEExplorer.csproj">
+      <Private>false</Private>
+      <ExcludeAssets>runtime</ExcludeAssets>
+    </ProjectReference>
+    <ProjectReference Include="..\UELib\src\Eliot.UELib.csproj">
+      <Private>false</Private>
+      <ExcludeAssets>runtime</ExcludeAssets>
+    </ProjectReference>
+  </ItemGroup>
 </Project>

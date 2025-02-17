@@ -99,31 +99,44 @@ namespace UEExplorer.UI
                     continue;
                 }
 
-                var assembly = Assembly.LoadFile(file);
-                var types = assembly.GetExportedTypes();
-                foreach (var t in types)
+                try
                 {
-                    var i = t.GetInterface("IExtension");
-                    if (i == null)
+                    var assembly = Assembly.LoadFile(file);
+                    var types = assembly.GetExportedTypes();
+                    foreach (var t in types)
                     {
-                        continue;
+                        var i = t.GetInterface("IExtension");
+                        if (i == null)
+                        {
+                            continue;
+                        }
+
+                        var ext = (IExtension)Activator.CreateInstance(t);
+                        ext.Initialize(this);
+
+                        var extensionTitleAttribute = t
+                            .GetCustomAttribute<ExtensionTitleAttribute>(false);
+                        if (extensionTitleAttribute == null)
+                        {
+                            throw new NotSupportedException("Missing ExtensionTitleAttribute on extension class");
+                        }
+
+                        string extensionName = extensionTitleAttribute.Title;
+                        var item = menuItem13.DropDownItems.Add(extensionName);
+                        item.Click += ext.OnActivate;
                     }
-
-                    var ext = (IExtension)Activator.CreateInstance(t);
-                    ext.Initialize(this);
-
-                    var extensionTitleAttribute = t
-                        .GetCustomAttribute<ExtensionTitleAttribute>(false);
-                    if (extensionTitleAttribute == null)
-                    {
-                        throw new NotSupportedException("Missing ExtensionTitleAttribute on extension class");
-                    }
-
-                    string extensionName = extensionTitleAttribute.Title;
-                    var item = menuItem13.DropDownItems.Add(extensionName);
-                    item.Click += ext.OnActivate;
-                    menuItem13.Enabled = true;
                 }
+                catch (FileLoadException exception)
+                {
+                    var item = menuItem13.DropDownItems.Add(Path.GetFileNameWithoutExtension(file));
+                    item.Enabled = false;
+                    item.ToolTipText = exception.Message;
+                }
+            }
+
+            if (files.Length > 0)
+            {
+                menuItem13.Enabled = true;
             }
         }
 

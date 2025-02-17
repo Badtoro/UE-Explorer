@@ -74,6 +74,7 @@
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
             groupBox1.Controls.Add(this.TreeView_Packages);
+            groupBox1.Controls.Add(this.Button_Save);
             groupBox1.Controls.Add(this.Button_Add);
             groupBox1.Location = new System.Drawing.Point(3, 4);
             groupBox1.Name = "groupBox1";
@@ -99,7 +100,7 @@
             | System.Windows.Forms.AnchorStyles.Right)));
             this.Button_Add.Location = new System.Drawing.Point(6, 464);
             this.Button_Add.Name = "Button_Add";
-            this.Button_Add.Size = new System.Drawing.Size(325, 23);
+            this.Button_Add.Size = new System.Drawing.Size(130, 23);
             this.Button_Add.TabIndex = 4;
             this.Button_Add.Text = "Scan Packages";
             this.Button_Add.UseVisualStyleBackColor = true;
@@ -111,21 +112,20 @@
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
             this.groupBox2.Controls.Add(label2);
-            this.groupBox2.Controls.Add(this.Button_Save);
             this.groupBox2.Controls.Add(this.FileNameTextBox);
             this.groupBox2.Controls.Add(label1);
             this.groupBox2.Location = new System.Drawing.Point(3, 4);
             this.groupBox2.Name = "groupBox2";
-            this.groupBox2.Size = new System.Drawing.Size(682, 92);
+            this.groupBox2.Size = new System.Drawing.Size(682, 493);
             this.groupBox2.TabIndex = 6;
             this.groupBox2.TabStop = false;
             this.groupBox2.Text = "Natives Table List Package";
             // 
             // Button_Save
             // 
-            this.Button_Save.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.Button_Save.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.Button_Save.Enabled = false;
-            this.Button_Save.Location = new System.Drawing.Point(6, 63);
+            this.Button_Save.Location = new System.Drawing.Point(180, 464);
             this.Button_Save.Name = "Button_Save";
             this.Button_Save.Size = new System.Drawing.Size(151, 23);
             this.Button_Save.TabIndex = 5;
