@@ -80,7 +80,30 @@ namespace UEExplorer.UI.Nodes
                     Nodes.Add( "Archetype:" + Table.ArchetypeTable );
                 }
 
-                if( Table.SerialSize > 0 )
+                if (Table.ComponentMap != null && Table.ComponentMap.Count > 0)
+                {
+                    var componentsNode = Nodes.Add("Components");
+                    foreach (var keyValuePair in Table.ComponentMap)
+                    {
+                        var obj = Table.Owner.GetIndexObject(keyValuePair.Value);
+                        if (obj != null)
+                        {
+                            componentsNode.Nodes.Add(obj.ToString());
+                        }
+                    }
+                }
+                
+                if (Table.PackageFlags != 0)
+                {
+                    Nodes.Add("PackageFlags:" + Table.PackageFlags);
+                }
+                
+                if ((Guid)Table.PackageGuid != Guid.Empty)
+                {
+                    Nodes.Add("PackageGuid:" + Table.PackageGuid);
+                }
+
+                if ( Table.SerialSize > 0 )
                 {
                     Nodes.Add( "Object Size:" + Table.SerialSize );
                     Nodes.Add( "Object Offset:" + Table.SerialOffset );

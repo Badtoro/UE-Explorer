@@ -757,10 +757,18 @@ namespace UEExplorer.UI.Tabs
                 }
             }
 
-            if( _UnrealPackage.HasClassType( item.ClassName ) )
+            if (item is UExportTableItem export)
             {
-                node.ForeColor = Color.DarkOrange;
-                node.ToolTipText = String.Format( Resources.CLASS_ISNT_SUPPORTED, item.ClassName );   
+                if (export.Archetype != null)
+                {
+                    node.ForeColor = Color.CadetBlue;
+                    node.ToolTipText = "Constructed from an archetype";
+                }
+                else if (export.ClassIndex != 0 && _UnrealPackage.HasClassType(export.Class?.ObjectName))
+                {
+                    node.ForeColor = Color.DarkOrange;
+                    node.ToolTipText = String.Format( Resources.CLASS_ISNT_SUPPORTED, export.Class.ObjectName);   
+                }
             }
         }
 
