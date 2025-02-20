@@ -203,7 +203,18 @@ namespace UEExplorer
                     "Engine.SequenceAction.Targets:ObjectProperty",
                     "XInterface.GUIComponent.Controls:ObjectProperty",
                     "Engine.Material.Expressions:ObjectProperty",
-                    "Engine.ParticleSystem.Emitters:ObjectProperty"
+                    "Core.Object.RawDistribution.LookupTable:FloatProperty",
+                    "Engine.ParticleEmitter.Modules:ObjectProperty",
+                    "Engine.ParticleEmitter.SpawnModules:ObjectProperty",
+                    "Engine.ParticleEmitter.UpdateModules:ObjectProperty",
+                    "Engine.ParticleSystem.Emitters:ObjectProperty",
+                    "Engine.ParticleSystem.LODDistances:FloatProperty",
+                    "Engine.ParticleSystem.LODSettings:StructProperty",
+                    "Engine.ParticleSystem.LODLevels:ObjectProperty",
+                    "Engine.ParticleSystem.LODSpawnRatios:FloatProperty", // old
+                    //"Engine.ParticleLODLevel.Modules:ObjectProperty",
+                    "Engine.ParticleSystemComponent.InstanceParameters:StructProperty",
+                    "Engine.ParticleSystemComponent.ReplayClips:ObjectProperty",
                 };
             }
 
@@ -242,6 +253,11 @@ namespace UEExplorer
             foreach (var varType in Options.VariableTypes)
             {
                 var varData = ParseVariable(varType);
+                if (UnrealConfig.VariableTypes.ContainsKey(varData.Item1))
+                {
+                    continue;
+                }
+                
                 UnrealConfig.VariableTypes.Add(varData.Item1, Tuple.Create(varData.Item2, varData.Item3));
             }
         }
