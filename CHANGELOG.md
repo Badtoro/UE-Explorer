@@ -1,5 +1,30 @@
 #
 
+## 1.4.4
+
+* Fixed NTL file generator extension
+* Fixed #74
+* Fixed #71
+* Fixed #67
+
+* Updated to UELib 1.8.1 from 1.7.0
+
+### UELib 1.8.0 - 1.8.1 Changelog
+
+#### [1.8.1](https://github.com/EliotVU/Unreal-Library/releases/tag/1.8.1)
+
+* Fixed and improved support for Template/UComponent objects (UE3)
+* d3968286 Fixed support for Borderlands 2 (bad token)
+* 655dd279 Fixed support for SCX and ShadowStrike based games.
+
+#### [1.8.0](https://github.com/EliotVU/Unreal-Library/releases/tag/1.8.0)
+
+* Support for Stranglehold
+* Improved support for Batman series
+* Improved support for Borderlands: GOTYE
+* Fixed bad decompilation of intrinsic array function calls under certain circumstances.
+* Fixed missing ')' in a replication statement
+
 ## 1.4.3
 
 * Hotfix for #66

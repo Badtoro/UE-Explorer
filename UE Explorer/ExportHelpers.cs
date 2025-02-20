@@ -34,12 +34,11 @@ namespace UEExplorer
 
         public static void CreateUPKGFile( this UnrealPackage package, string exportPath )
         {
-            var upkgContent = new[]
-            {
+            string[] upkgContent = {
                 "[Flags]",
-                "AllowDownload=" + package.HasPackageFlag( PackageFlags.AllowDownload ),
-                "ClientOptional=" + package.HasPackageFlag( PackageFlags.ClientOptional ),
-                "ServerSideOnly=" + package.HasPackageFlag( PackageFlags.ServerSideOnly )
+                "AllowDownload=" + package.Summary.PackageFlags.HasFlag(PackageFlag.AllowDownload),
+                "ClientOptional=" + package.Summary.PackageFlags.HasFlag(PackageFlag.ClientOptional),
+                "ServerSideOnly=" + package.Summary.PackageFlags.HasFlag(PackageFlag.ServerSideOnly)
             };
 
             File.WriteAllLines( 
@@ -51,14 +50,21 @@ namespace UEExplorer
         public static string ExportPackageClasses( this UnrealPackage package, bool exportScripts = false )
         {
             Program.LoadConfig();
-            var exportPath = package.InitializeExportDirectory();
-            package.NTLPackage = new NativesTablePackage();
-            package.NTLPackage.LoadPackage( Path.Combine( Application.StartupPath, "Native Tables", Program.Options.NTLPath ) );
+            string exportPath = package.InitializeExportDirectory();
+
+            using (var ntlFileStream =
+                   File.Open(Path.Combine(Application.StartupPath, "Native Tables", Program.Options.NTLPath),
+                       FileMode.Open))
+            {
+                package.NTLPackage = new NativesTablePackage();
+                package.NTLPackage.Deserialize(ntlFileStream);
+            }
+            
             foreach( UClass uClass in package.Objects.Where( o => o is UClass && o.ExportTable != null ) )
             {
                 try
                 {
-                    var exportContent = exportScripts && uClass.ScriptText != null
+                    string exportContent = exportScripts && uClass.ScriptText != null
                         ? uClass.ScriptText.Decompile()
                         : uClass.Decompile();
 
