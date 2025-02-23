@@ -53,7 +53,7 @@ namespace UEExplorer
             string exportPath = package.InitializeExportDirectory();
 
             using (var ntlFileStream =
-                   File.Open(Path.Combine(Application.StartupPath, "Native Tables", Program.Options.NTLPath),
+                   File.Open(Path.Combine(Application.StartupPath, "Native Tables", Program.Options.NTLPath + NativesTablePackage.Extension),
                        FileMode.Open))
             {
                 package.NTLPackage = new NativesTablePackage();
