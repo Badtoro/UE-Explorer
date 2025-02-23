@@ -1,5 +1,23 @@
 #
 
+## 1.4.5
+
+* Fixed classes exporter throwing an exception #75
+
+* Updated to UELib 1.9.0 from 1.8.1
+
+### UELib 1.9.0
+
+#### [1.9.0](https://github.com/EliotVU/Unreal-Library/releases/tag/1.9.0)
+
+* Support for Tom Clancy's Rainbow Six: Vegas
+* Support for Tom Clancy's Rainbow Six: Vegas 2
+* Support for early UE3 packages including:
+  * RoboHordes
+* Support for deserialization and decompilation for Gigantic's UJsonNodeRoot and UMoJsonObject
+* Fixed minor issues with early UE3 games affecting:
+  * Tom Clancy's EndWar
+
 ## 1.4.4
 
 * Fixed NTL file generator extension
