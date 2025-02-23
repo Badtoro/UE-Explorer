@@ -659,6 +659,15 @@ namespace UEExplorer.UI.Tabs
                             {
                                 node.ForeColor = Color.Red;
                             }
+                            else
+                            {
+                                if (obj.Package.Version >= 178
+                                    && ((UClass)obj).HasClassFlag(ClassFlags.Hidden)
+                                    && ((UClass)obj).HasClassFlag(ClassFlags.Deprecated))
+                                {
+                                    node.ForeColor = SystemColors.GrayText;
+                                }
+                            }
 
                             return node;
                         });
