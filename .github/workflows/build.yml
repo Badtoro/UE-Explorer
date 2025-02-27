@@ -1,0 +1,36 @@
+name: .NET
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - '^[0-9]+\.[0-9]+\.[0-9]+$'
+  pull_request:
+    branches: [ "UE-Explorer" ]
+
+jobs:
+  build:
+
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: 'true'
+
+    - name: Setup .NET SDK
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 9.0.x
+
+    - name: Restore dependencies
+      run: dotnet restore
+
+    - name: Build release
+      run: dotnet build "UE Explorer" --no-restore -c Release -f net48
+
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: UE-Explorer-Win-x86
+        path: "UE Explorer\\bin\\Release\\net48\\"
