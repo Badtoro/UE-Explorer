@@ -185,8 +185,8 @@ csharp_space_between_parentheses = false
 csharp_space_between_square_brackets = false
 
 # License header
-file_header_template = 
-csharp_style_namespace_declarations = block_scoped:silent
+file_header_template =
+csharp_style_namespace_declarations = file_scoped:silent
 csharp_style_prefer_method_group_conversion = true:silent
 csharp_style_prefer_top_level_statements = true:silent
 csharp_style_deconstructed_variable_declaration = true:suggestion

@@ -206,6 +206,10 @@
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>
     </None>
+    <None Include="..\CHANGELOG.md">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
     <None Include="..\README.md">
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>
@@ -240,7 +244,7 @@
     </PackageReference>
     <PackageReference Include="Microsoft.VisualBasic" Version="10.3.0" />
     <PackageReference Include="Microsoft.Web.WebView2">
-      <Version>1.0.2849.39</Version>
+      <Version>1.0.3065.39</Version>
     </PackageReference>
     <PackageReference Include="System.Resources.Extensions" Version="8.0.0" />
   </ItemGroup>
