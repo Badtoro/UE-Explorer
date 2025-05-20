@@ -85,7 +85,7 @@ namespace UEExplorer.UI.Nodes
                     var componentsNode = Nodes.Add("Components");
                     foreach (var keyValuePair in Table.ComponentMap)
                     {
-                        var obj = Table.Owner.GetIndexObject(keyValuePair.Value);
+                        var obj = Table.Owner.IndexToObject(keyValuePair.Value);
                         if (obj != null)
                         {
                             componentsNode.Nodes.Add(obj.ToString());

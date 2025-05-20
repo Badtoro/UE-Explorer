@@ -308,6 +308,26 @@ namespace UEExplorer.UI.Forms
 
         private void InitializeMetaInfoFields()
         {
+            // Re-load the contents with a recording stream!
+            if (Target is UObject uObject)
+            {
+                uObject.Load<UObjectRecordStream>();
+                if (uObject.ThrownException != null)
+                {
+                    _Structure.MetaInfoList.Add
+                    (
+                        new HexMetaInfo.BytesMetaInfo
+                        {
+                            Offset = (int)uObject.ExceptionPosition,
+                            Size = (int)(uObject.ExportTable.SerialSize - uObject.ExceptionPosition),
+                            Type = uObject.ThrownException.GetType().Name,
+                            Color = Color.Red,
+                            Name = uObject.ThrownException.GetType().Name
+                        }
+                    );
+                }
+            }
+
             if (Target is IBinaryData binaryTarget && binaryTarget.BinaryMetaData != null)
             {
                 foreach (var binaryField in binaryTarget.BinaryMetaData.Fields)
@@ -319,7 +339,7 @@ namespace UEExplorer.UI.Forms
                     (
                         new HexMetaInfo.BytesMetaInfo
                         {
-                            Offset = (int)binaryField.Position,
+                            Offset = binaryField.Position,
                             Size = (int)binaryField.Size,
                             Type = "Generated",
                             Color = NormalizeArgbToColor(colorHash),

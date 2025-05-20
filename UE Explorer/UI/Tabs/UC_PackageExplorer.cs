@@ -368,14 +368,6 @@ namespace UEExplorer.UI.Tabs
 
                 ReadMetaInfo();
             }
-            catch( ImportingObjectsException e )
-            {
-                throw new UnrealException( "Couldn't load " + FileName + "! \r\nEvent:Importing Objects", e );
-            }
-            catch( LinkingObjectsException e )
-            {
-                throw new UnrealException( "Couldn't load " + FileName + "! \r\nEvent:Linking Objects", e );
-            }
             catch( Exception e )
             {
                 throw new UnrealException( "Couldn't load " + FileName + "! \r\nEvent:Initializing Package", e );
@@ -399,10 +391,10 @@ namespace UEExplorer.UI.Tabs
 
         private void ReadMetaInfo()
         {
-            foreach( var obj in _UnrealPackage.Objects.Where( o => o is UConst && o.Name.StartsWith( "META_DECOMPILER" ) ) )
+            foreach( var obj in _UnrealPackage.Objects.Where( o => o is UConst && o.Name.ToString().StartsWith( "META_DECOMPILER" ) ) )
             {
                 var value = ((UConst)obj).Value;
-                var parms = obj.Name.Substring( 16 ).Split( '_' );
+                var parms = obj.Name.ToString().Substring( 16 ).Split( '_' );
                 switch( parms[0] )
                 {
                     case "VAR":
@@ -628,7 +620,7 @@ namespace UEExplorer.UI.Tabs
 
         private void _OnNotifyObjectAdded( object sender, ObjectEventArgs e )
         {
-            if( e.ObjectRef.ExportTable != null && e.ObjectRef.ExportTable.ClassIndex == 0 && e.ObjectRef.Name.ToLower() != "none" )
+            if( e.ObjectRef.ExportTable != null && e.ObjectRef.ExportTable.ClassIndex == 0 && e.ObjectRef.Name.ToString().ToLower() != "none" )
             {
                 _ClassesList.Add( (UClass)e.ObjectRef );
             }
@@ -2084,7 +2076,7 @@ namespace UEExplorer.UI.Tabs
             {
                 return;
             }
-            ((UObject)exportableObject).BeginDeserializing();
+            ((UObject)exportableObject).Load();
 
             string extensions = String.Empty;
             foreach( var ext in exportableObject.ExportableExtensions )
@@ -2140,7 +2132,7 @@ namespace UEExplorer.UI.Tabs
             int objectIndexToFind = (int)Num_ObjectIndex.Value;
             try
             {
-                var foundObject = _UnrealPackage.GetIndexTable( objectIndexToFind );
+                var foundObject = _UnrealPackage.IndexToObjectResource( objectIndexToFind );
                 LObjectIndex.Text = foundObject != null 
                     ? String.Format( Resources.OBJECT_IS, foundObject.ObjectName ) 
                     : Resources.NO_OBJECT_WAS_FOUND;

@@ -238,7 +238,7 @@ namespace UEExplorer.UI.Forms
             {
                 if (HexPanel.Target is UObject obj)
                 {
-                    obj.BeginDeserializing();
+                    obj.Load();
                     HexPanel.Reload();
                 }
             }
