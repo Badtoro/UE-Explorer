@@ -1,5 +1,31 @@
 #
 
+## 1.4.6
+
+* Fixed some minor issues
+* Updated to UELib 1.10.0 from 1.9.0
+
+### UELib 1.10.0
+
+#### [1.10.0](https://github.com/EliotVU/Unreal-Library/releases/tag/1.10.0)
+
+* Support for Huxley (thanks to @EDITzDev)
+* Support for Borderlands 2 VR
+* Improved support for Borderlands series (added support for custom property types)
+* Improved support for Batman series
+* Improved support for Bulletstorm (and Full Clip Edition)
+* Improved support for The Exiled Realm of Arborea
+* Improved support for Shadow Strike (Splinter Cell series) based games
+* Improved support for Shadow Ops: Red Mercury
+* Improved support for {UComponent} class derivatives, this makes it possible to decompile the properties of many more objects
+* Fixed support for America's Army 2 (decryption)
+* Fixed support for UE4 .uasset files (basic)
+
+* Added Support for classes {UMusic, USoundNodeWave, USoundNode, USoundCue} of which its raw data can now be exported.
+
+* Fixed decompilation of class specifier `nousercreate` (previously `notplaceable`)
+* Fixed decompilation of context tokens that affected *UT3* and *Batman: Arkham Asylum* (thanks to @etkramer)
+
 ## 1.4.5
 
 * Fixed classes exporter throwing an exception #75
