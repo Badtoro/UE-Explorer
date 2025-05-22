@@ -332,18 +332,18 @@ namespace UEExplorer.UI.Forms
             {
                 foreach (var binaryField in binaryTarget.BinaryMetaData.Fields)
                 {
-                    int colorHash = binaryField.Name.GetHashCode()
+                    int colorHash = binaryField.Field.GetHashCode()
                                     ^ (int)binaryField.Size
-                                    ^ (binaryField.Tag?.GetType().GetHashCode() ?? 1);
+                                    ^ (binaryField.Value?.GetType().GetHashCode() ?? 1);
                     _Structure.MetaInfoList.Add
                     (
                         new HexMetaInfo.BytesMetaInfo
                         {
-                            Offset = binaryField.Position,
+                            Offset = (int)binaryField.Offset,
                             Size = (int)binaryField.Size,
                             Type = "Generated",
                             Color = NormalizeArgbToColor(colorHash),
-                            Name = binaryField.Name,
+                            Name = binaryField.Field,
                             Tag = binaryField
                         }
                     );
@@ -353,17 +353,17 @@ namespace UEExplorer.UI.Forms
             if (!(Target is UStruct unStruct))
                 return;
 
-            if (unStruct.ByteCodeManager?.DeserializedTokens == null ||
-                unStruct.ByteCodeManager.DeserializedTokens.Count <= 0)
+            if (unStruct.ByteCodeManager == null)
                 return;
 
+            unStruct.ByteCodeManager.Deserialize();
             foreach (var token in unStruct.ByteCodeManager.DeserializedTokens)
             {
                 _Structure.MetaInfoList.Add
                 (
                     new HexMetaInfo.BytesMetaInfo
                     {
-                        Offset = (int)(token.StoragePosition + (int)unStruct.ScriptOffset),
+                        Offset = token.StoragePosition + (int)unStruct.ScriptOffset,
                         Size = 1,
                         HoverSize = token.StorageSize,
                         Type = "Generated",

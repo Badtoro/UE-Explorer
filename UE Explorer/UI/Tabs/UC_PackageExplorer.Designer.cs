@@ -1196,7 +1196,7 @@
             this.ViewTools.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
             resources.ApplyResources(this.ViewTools, "ViewTools");
             this.ViewTools.Name = "ViewTools";
-            this.ViewTools.DropDownItemClicked += new System.Windows.Forms.ToolStripItemClickedEventHandler(this.ViewTools_DropDownItemClicked);
+            this.ViewTools.DropDown.ItemClicked += new System.Windows.Forms.ToolStripItemClickedEventHandler(this.ViewTools_DropDownItemClicked);
             // 
             // label3
             // 

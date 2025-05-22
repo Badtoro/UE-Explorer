@@ -254,78 +254,52 @@ namespace UEExplorer.UI.Tabs
         {
             // Section 1
             VersionValue.Text 	= (_UnrealPackage.Version.ToString( CultureInfo.InvariantCulture ));
-            FlagsValue.Text 	= UnrealMethods.FlagToString( (_UnrealPackage.PackageFlags & ~(uint)PackageFlags.Protected) );
+            FlagsValue.Text 	= UnrealMethods.FlagToString( (_UnrealPackage.Summary.PackageFlags & ~(uint)PackageFlags.Protected) );
             LicenseeValue.Text 	= _UnrealPackage.LicenseeVersion.ToString( CultureInfo.InvariantCulture );
-            Label_GUID.Text		= _UnrealPackage.GUID;
+            Label_GUID.Text		= _UnrealPackage.Summary.Guid.ToString();
 
             // Section 2	
-            if( _UnrealPackage.Version >= 245 )
+            if( _UnrealPackage.Summary.EngineVersion != 0 )
             {
-                if( _UnrealPackage.EngineVersion > 0 )
-                {
-                    Label_EngineVersion.Visible		= true;
-                    EngineValue.Visible				= true;
-                    var v = _UnrealPackage.EngineVersion & 0x0000FFFF;
-                    var l = _UnrealPackage.EngineVersion >> 16;
-                    EngineValue.Text =  l > 0 
-                        ? String.Format( "{0}/{1}", v, l.ToString( CultureInfo.InvariantCulture ).PadLeft( v.ToString( CultureInfo.InvariantCulture ).Length, '0' ) )
-                        : v.ToString( CultureInfo.InvariantCulture );
-                }
-
-                if( _UnrealPackage.Group != "None" )
-                {
-                    Label_Folder.Visible			= true;
-                    FolderValue.Visible				= true;
-                    FolderValue.Text				= _UnrealPackage.Group;
-                }
+                Label_EngineVersion.Visible		= true;
+                EngineValue.Visible				= true;
+                var v = _UnrealPackage.Summary.EngineVersion & 0x0000FFFF;
+                var l = _UnrealPackage.Summary.EngineVersion >> 16;
+                EngineValue.Text =  l > 0 
+                    ? String.Format( "{0}/{1}", v, l.ToString( CultureInfo.InvariantCulture ).PadLeft( v.ToString( CultureInfo.InvariantCulture ).Length, '0' ) )
+                    : v.ToString( CultureInfo.InvariantCulture );
             }
 
-            if( _UnrealPackage.Version >= UnrealPackage.VCOOKEDPACKAGES )
+            if( _UnrealPackage.Summary.FolderName != "None" )
             {
-                if( _UnrealPackage.CookerVersion > 0 )
-                {
-                    Label_CookerVersion.Visible		= true;
-                    CookerValue.Visible				= true;
-                    var v = _UnrealPackage.CookerVersion & 0x0000FFFF;
-                    var l = _UnrealPackage.CookerVersion >> 16;
-                    CookerValue.Text = l > 0 
-                        ? String.Format( "{0}/{1}", v, l.ToString( CultureInfo.InvariantCulture ).PadLeft( v.ToString( CultureInfo.InvariantCulture ).Length, '0' ) )
-                        : v.ToString( CultureInfo.InvariantCulture );
-                }
+                Label_Folder.Visible			= true;
+                FolderValue.Visible				= true;
+                FolderValue.Text				= _UnrealPackage.Summary.FolderName;
+            }
+
+            if( _UnrealPackage.Summary.CookerVersion != 0 )
+            {
+                Label_CookerVersion.Visible		= true;
+                CookerValue.Visible				= true;
+                var v = _UnrealPackage.Summary.CookerVersion & 0x0000FFFF;
+                var l = _UnrealPackage.Summary.CookerVersion >> 16;
+                CookerValue.Text = l > 0 
+                    ? String.Format( "{0}/{1}", v, l.ToString( CultureInfo.InvariantCulture ).PadLeft( v.ToString( CultureInfo.InvariantCulture ).Length, '0' ) )
+                    : v.ToString( CultureInfo.InvariantCulture );
             }
 
             BuildValue.Text = _UnrealPackage.Build.Name.ToString();
 
-            // Automatic iterate through all package flags and return them as a string list
-            var flags = new List<string>
-            {
-                "AllowDownload " + _UnrealPackage.HasPackageFlag( PackageFlags.AllowDownload ),
-                "ClientOptional " + _UnrealPackage.HasPackageFlag( PackageFlags.ClientOptional ),
-                "ServerSideOnly " + _UnrealPackage.HasPackageFlag( PackageFlags.ServerSideOnly )
-            };
+            var flags = _UnrealPackage.Summary.PackageFlags
+                .EnumerateFlags()
+                .Select(index => Enum.GetName(typeof(PackageFlag), index))
+                .ToList();
 
-            if( _UnrealPackage.Version >= UnrealPackage.VCOOKEDPACKAGES )
-            {
-                flags.Add( "Cooked " + _UnrealPackage.IsCooked() );
-                flags.Add( "Compressed " + _UnrealPackage.HasPackageFlag( PackageFlags.Compressed ) );
-                flags.Add( "FullyCompressed " + _UnrealPackage.HasPackageFlag( PackageFlags.FullyCompressed ) );	
-                flags.Add( "Debug " + _UnrealPackage.IsDebug() );
-                flags.Add( "Script " + _UnrealPackage.IsScript() );
-                flags.Add( "Stripped " + _UnrealPackage.IsStripped() );			
-                flags.Add( "Map " + _UnrealPackage.IsMap() );
-                flags.Add( "Console " + _UnrealPackage.IsBigEndianEncoded );
-            }
-            else if( _UnrealPackage.Version > 61 && _UnrealPackage.Version <= 69 )		// <= UT99
-            {
-                flags.Add( "Encrypted " + _UnrealPackage.HasPackageFlag( PackageFlags.Encrypted ) );
-            }
-
-            foreach( var flag in flags )
+            foreach( string flag in flags )
             {
                 var r = new DataGridViewRow();
                 r.CreateCells( DataGridView_Flags );
-                var vals = flag.Split( new[]{ ' ' } );
-                r.SetValues( vals[0], vals[1] );
+                r.SetValues( flag, "True" );
                 DataGridView_Flags.Rows.Add( r );
             }
         }
@@ -653,9 +627,8 @@ namespace UEExplorer.UI.Tabs
                             }
                             else
                             {
-                                if (obj.Package.Version >= 178
-                                    && ((UClass)obj).HasClassFlag(ClassFlags.Hidden)
-                                    && ((UClass)obj).HasClassFlag(ClassFlags.Deprecated))
+                                if (((UClass)obj).ClassFlags.HasFlag(ClassFlag.Hidden) &&
+                                    ((UClass)obj).ClassFlags.HasFlag(ClassFlag.Deprecated))
                                 {
                                     node.ForeColor = SystemColors.GrayText;
                                 }
@@ -1451,7 +1424,7 @@ namespace UEExplorer.UI.Tabs
 
                     case "MANAGED_PROPERTIES":
                         using( var propDialog = new PropertiesDialog{
-                                ObjectLabel = {Text = ((TreeNode)target).Text},
+                                ObjectLabel = {Text = target.ToString()},
                                 ObjectPropertiesGrid = {SelectedObject = obj}
                             } )
                         {
@@ -1705,7 +1678,7 @@ namespace UEExplorer.UI.Tabs
         {
             if( _LastNodeContent != node )
             {
-                BuildItemNodes( node, ViewTools.DropDownItems );
+                BuildItemNodes( node, ViewTools.DropDownItems, ViewTools_DropDownItemClicked);
             }
             ViewTools.Enabled = ViewTools.DropDownItems.Count > 0 && node != null;
             _LastNodeContent = node;
