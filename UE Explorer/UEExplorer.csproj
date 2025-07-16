@@ -51,7 +51,7 @@
     <IsPublishable>False</IsPublishable>
     <PlatformTarget>AnyCPU</PlatformTarget>
     <Title>UE Explorer</Title>
-    <Version>$(VersionPrefix)1.4.6</Version>
+    <Version>$(VersionPrefix)1.5.0</Version>
     <Authors>EliotVU</Authors>
     <Copyright>© 2009-2025 Eliot van Uytfanghe. All rights reserved.</Copyright>
     <Description>An easy-to-use browser and decompiler for Unreal Engine packages (.upk, .u).</Description>
@@ -260,6 +260,19 @@
     <Content Include="license.html">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Autoupdater.NET.Official">
+      <Version>1.9.2</Version>
+    </PackageReference>
+    <PackageReference Include="AvalonEdit">
+      <Version>6.3.1.120</Version>
+    </PackageReference>
+    <PackageReference Include="Microsoft.VisualBasic" Version="10.3.0" />
+    <PackageReference Include="Microsoft.Web.WebView2">
+      <Version>1.0.3240.44</Version>
+    </PackageReference>
+    <PackageReference Include="System.Resources.Extensions" Version="8.0.0" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Update="Properties\Resources.resx">

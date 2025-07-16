@@ -1,5 +1,32 @@
 #
 
+## 1.5.0
+
+Significant updates to the Hex Viewer:
+
+* Added the capability to select multiple bytes.
+* Added *Restore*, *Copy* and *Paste* at selection.
+* Improved painting performance.
+* Improved the short-cut behavior to be more like that of other Hex-Editors
+* Re-implemented the data-type preview (moved to the right), and selecting a row will now also select the related bytes.
+* Added a new File->Open option to open the buffer in the application "ImHex"
+
+* Fixed some Dutch localization strings.
+
+* Updated to UELib 1.11.1 from 1.10.0
+
+## UELib [1.11.1](https://github.com/EliotVU/Unreal-Library/releases/tag/1.11.1)
+
+* Support for Gears of War: Ultimate Edition and Reloaded (thanks to @PaoloTK)
+* Fixed missing CtorLink flag resulting in a /* 0x400000 */ comment in the decompilation output.
+
+## UELib [1.11.0](https://github.com/EliotVU/Unreal-Library/releases/tag/1.11.0)
+
+* Support for Star Wars: Republic Commando
+* Support for Advent Rising
+* Support for Tom Clancy's Splinter Cell: Blacklist (thanks to @shryder)
+* Fixed #111; Use Windows ANSI over ASCII
+
 ## 1.4.6
 
 * Fixed some minor issues
