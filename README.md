@@ -17,14 +17,18 @@ You can download and install UE Explorer for **Windows** using one of the follow
 
 ## Features
   
-- UnrealScript decompilation with high accurracy
-- Package classes tree
-- Package dependencies tree
-- Package content tree
-- Hex Viewer with rich defined-structures to help with debugging and/or hex-modding
-- Specialized tokens output to help with hex-modding
-- Code export
-- ... TODO
+- UnrealScript decompilation with high accurracy.
+- Export any UnrealScript classes, or entire package of classes.
+- Export any sound of an Unreal package.
+
+Exploring:
+- Explore a tree of classes to navigate all decompiled UnrealScript classes.
+- Explore a tree of content to navigate the properties of any non-UnrealScript object.
+- View all the dependencies of an Unreal package, including the object that it is dependant on.
+
+Modding:
+- Hex Viewer with rich defined-structures to help with debugging and/or hex-modding.
+- A specialized UnrealScript tokens output to assist with hex-modding.
   
 It has support for:
 - Unreal Engine 1
@@ -50,7 +54,20 @@ If you want to contribute to the app you can do so by doing one of the following
 This is the repository for the UI which is using UELib to do most of its Unreal related work.
 
 See the [UELib](https://github.com/EliotVU/Unreal-Library) for more.
-  
+
+## Guides
+
+UE Explorer has been widely used to dig into and mod Unreal Engine based games.
+Various communities have written guides, such as:
+
+* [Borderlands Modding](https://github.com/BLCM/BLCMods/wiki)
+* [Dishonored Ultimate Difficulty Mod](https://www.ttlg.com/forums/showthread.php?t=141188&page=2&p=2208847&viewfull=1#post2208847)
+* [Aliens Colonial Marines: Editing game variables](https://www.moddb.com/games/aliens-colonial-marines/tutorials/aliens-colonial-marines-editing-game-variables)
+* [Modding Guide - Gal*Gun Double Peace](https://steamcommunity.com/sharedfiles/filedetails/?id=1241233230)
+* [Batman Arkham City - Hacking Unrealscript](https://www.youtube.com/watch?v=aEvoWFlvIQs)
+
+*Do you have or know of a guide that's missing here? Feel free to submit a pull-request, inform us in the discussion board*
+
 ## Credits
   
 - [Antonio Cordero Balcazar](https://github.com/acorderob) for [UTPT](https://www.acordero.org/projects/unreal-tournament-package-tool)
