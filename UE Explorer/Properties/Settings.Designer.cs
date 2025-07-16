@@ -12,7 +12,7 @@ namespace UEExplorer.Properties {
     
     
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
-    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.VisualStudio.Editors.SettingsDesigner.SettingsSingleFileGenerator", "17.7.0.0")]
+    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.VisualStudio.Editors.SettingsDesigner.SettingsSingleFileGenerator", "17.14.0.0")]
     internal sealed partial class Settings : global::System.Configuration.ApplicationSettingsBase {
         
         private static Settings defaultInstance = ((Settings)(global::System.Configuration.ApplicationSettingsBase.Synchronized(new Settings())));
@@ -121,7 +121,7 @@ namespace UEExplorer.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("219")]
+        [global::System.Configuration.DefaultSettingValueAttribute("643")]
         public int HexPanel_SplitterDistance {
             get {
                 return ((int)(this["HexPanel_SplitterDistance"]));
@@ -140,6 +140,18 @@ namespace UEExplorer.Properties {
             }
             set {
                 this["PackageExplorer_SplitterDistance"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("680")]
+        public int HexViewer_SplitterDistance {
+            get {
+                return ((int)(this["HexViewer_SplitterDistance"]));
+            }
+            set {
+                this["HexViewer_SplitterDistance"] = value;
             }
         }
     }

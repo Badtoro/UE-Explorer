@@ -120,9 +120,8 @@
   <data name="NodeItem_ExportWithUEModelViewer" xml:space="preserve">
     <value>Export with UE Model Viewer</value>
   </data>
-  <data name="Error" xml:space="preserve">
-    <value>Error</value>
-    <comment>Dialog title</comment>
+  <data name="NOTICE_TITLE" xml:space="preserve">
+    <value>Notice</value>
   </data>
   <data name="NEW_VERSION_AVAILABLE_MESSAGE" xml:space="preserve">
     <value>Clicking yes will bring you to the page with the latest version!
@@ -130,8 +129,9 @@ Your version: {0}
 Latest version: {1}</value>
     <comment>Dialog description.</comment>
   </data>
-  <data name="ExportTextTitle" xml:space="preserve">
-    <value>Export Text</value>
+  <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
+  <data name="History" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\History.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
   <data name="UnrealClassFilter" xml:space="preserve">
     <value>Unreal Class</value>
@@ -168,8 +168,11 @@ If you happen to move the "UE Explorer" folder, uninstall or update it, then ple
   <data name="NodeItem_ViewCPPText" xml:space="preserve">
     <value>View CPP Script</value>
   </data>
-  <data name="DESERIALIZING_OBJECTS" xml:space="preserve">
-    <value>Deserializing Objects...</value>
+  <data name="Forwards" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\Forwards.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="Backwards" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\Backwards.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
   <data name="CLASS_ISNT_SUPPORTED" xml:space="preserve">
     <value>Class {0} isn't supported</value>
@@ -187,13 +190,8 @@ If you happen to move the "UE Explorer" folder, uninstall or update it, then ple
   <data name="NAME_IS" xml:space="preserve">
     <value>Name is {0}</value>
   </data>
-  <data name="COULDNT_SAVE_EXCEPTION" xml:space="preserve">
-    <value>Couldn't save the file because of the following exception: {0}</value>
-  </data>
-  <data name="PACKAGE_UNKNOWN_SIGNATURE" xml:space="preserve">
-    <value>This package has an unknown signature.
-
-Are you sure you want to try to deserialize this package? Clicking Yes might lead to unexpected results!</value>
+  <data name="HexView_Offset" xml:space="preserve">
+    <value>Offset</value>
   </data>
   <data name="EXPORTED_ALL_PACKAGE_CLASSES" xml:space="preserve">
     <value>Exported all package classes of {0} to {1}
@@ -203,8 +201,8 @@ Click Yes if you want to go to the output directory!</value>
   <data name="HexView_COULDNT_ACQUIRE_VALUE" xml:space="preserve">
     <value>Couldn't acquire value</value>
   </data>
-  <data name="NodeItem_ViewContent" xml:space="preserve">
-    <value>View Content</value>
+  <data name="DESERIALIZING_OBJECTS" xml:space="preserve">
+    <value>Deserializing Objects...</value>
   </data>
   <data name="CHECKFORUPDATES_FAILED_MESSAGE" xml:space="preserve">
     <value>Failed to request the latest version. Please try again later!</value>
@@ -246,18 +244,20 @@ Click Yes if you want to go to the output directory!</value>
   <data name="NO_FIND_RESULTS" xml:space="preserve">
     <value>Found no results with the specified text "{0}".</value>
   </data>
-  <data name="NodeItem_ViewProcessedScript" xml:space="preserve">
-    <value>View Processed Script</value>
+  <data name="ExportTextTitle" xml:space="preserve">
+    <value>Export Text</value>
   </data>
   <data name="CHECKING_FOR_UPDATES_LOG" xml:space="preserve">
     <value>Checking for updates(Current version is {0})...</value>
   </data>
-  <data name="NOTICE_TITLE" xml:space="preserve">
-    <value>Notice</value>
+  <data name="UE_ProgramLogo" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\UI\Main\ProgramLogo.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
-  <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
-  <data name="History" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\History.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  <data name="COULDNT_SAVE_EXCEPTION" xml:space="preserve">
+    <value>Couldn't save the file because of the following exception: {0}</value>
+  </data>
+  <data name="Copy" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\Copy.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
   <data name="ProgramForm_LoadFile_Loading_file" xml:space="preserve">
     <value>Loading file {0}...</value>
@@ -290,9 +290,6 @@ Click Yes if you want to go to the output directory!</value>
   <data name="Version" xml:space="preserve">
     <value>Version {0}</value>
   </data>
-  <data name="UE_ProgramLogo" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\UI\Main\ProgramLogo.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
   <data name="ExceptionDialog_THANKS" xml:space="preserve">
     <value>Thanks for reporting this exception occurrance!</value>
   </data>
@@ -301,6 +298,10 @@ Click Yes if you want to go to the output directory!</value>
   </data>
   <data name="NodeItem_ViewScript" xml:space="preserve">
     <value>View Script</value>
+  </data>
+  <data name="NO_NEW_VERSION_AVAILABLE_MESSAGE" xml:space="preserve">
+    <value>You have the latest version of {0}</value>
+    <comment>Dialog description</comment>
   </data>
   <data name="CONSTRUCTING_OBJECTS" xml:space="preserve">
     <value>Constructing Objects...</value>
@@ -321,6 +322,9 @@ You can download the tool from http://www.gildor.org/downloads or press OK to go
   <data name="NOT_AVAILABLE" xml:space="preserve">
     <value>N/A</value>
   </data>
+  <data name="NodeItem_ViewProcessedScript" xml:space="preserve">
+    <value>View Processed Script</value>
+  </data>
   <data name="INVALID_NAME_INDEX" xml:space="preserve">
     <value>Invalid Name index {0}</value>
   </data>
@@ -329,9 +333,10 @@ You can download the tool from http://www.gildor.org/downloads or press OK to go
 
 	{0}</value>
   </data>
-  <data name="NO_NEW_VERSION_AVAILABLE_MESSAGE" xml:space="preserve">
-    <value>You have the latest version of {0}</value>
-    <comment>Dialog description</comment>
+  <data name="PACKAGE_UNKNOWN_SIGNATURE" xml:space="preserve">
+    <value>This package has an unknown signature.
+
+Are you sure you want to try to deserialize this package? Clicking Yes might lead to unexpected results!</value>
   </data>
   <data name="ProgramForm_Cache_Extractor" xml:space="preserve">
     <value>Cache Extractor</value>
@@ -355,9 +360,6 @@ You can download the tool from http://www.gildor.org/downloads or press OK to go
   <data name="UNRECOGNIZED_COMMANDLINE_OPTION" xml:space="preserve">
     <value>Unrecognized commandline option {0}</value>
   </data>
-  <data name="HexView_Position" xml:space="preserve">
-    <value>Position: {0} + {1} ; 0x{2:x8}</value>
-  </data>
   <data name="UC_PackageExplorer_PerformNodeAction_QUESTIONEXPORTFOLDER" xml:space="preserve">
     <value>Do you want to go the folder with the exported content?</value>
   </data>
@@ -373,8 +375,8 @@ You can download the tool from http://www.gildor.org/downloads or press OK to go
   <data name="UNRECOGNIZED_EXPORT_TYPE" xml:space="preserve">
     <value>Unrecognized export type {0}</value>
   </data>
-  <data name="HexView_Offset" xml:space="preserve">
-    <value>Offset</value>
+  <data name="NodeItem_ViewContent" xml:space="preserve">
+    <value>View Content</value>
   </data>
   <data name="INITIALIZING_UI" xml:space="preserve">
     <value>Initializing UI...</value>
@@ -384,6 +386,10 @@ You can download the tool from http://www.gildor.org/downloads or press OK to go
   </data>
   <data name="SEARCH_AS_OBJECT" xml:space="preserve">
     <value>Search as Object</value>
+  </data>
+  <data name="Error" xml:space="preserve">
+    <value>Error</value>
+    <comment>Dialog title</comment>
   </data>
   <data name="NoTargetForViewBuffer" xml:space="preserve">
     <value>No target found for "View Buffer"</value>
@@ -410,10 +416,7 @@ You can download the tool from http://www.gildor.org/downloads or press OK to go
     <value>Homepage</value>
     <comment>Tab title</comment>
   </data>
-  <data name="Backwards" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\Backwards.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="Forwards" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\Forwards.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  <data name="Paste" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\Paste.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
 </root>

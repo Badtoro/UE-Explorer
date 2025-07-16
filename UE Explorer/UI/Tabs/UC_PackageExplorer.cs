@@ -226,23 +226,13 @@ namespace UEExplorer.UI.Tabs
                 throw new UnrealException(e.Message, e);
             }
 
-            string ntlPath = Path.Combine(Application.StartupPath, "Native Tables", Program.Options.NTLPath);
-            if (File.Exists(ntlPath + NativesTablePackage.Extension))
+            string ntlPath = Path.Combine(Application.StartupPath, "Native Tables",
+                Program.Options.NTLPath + NativesTablePackage.Extension);
+            if (File.Exists(ntlPath))
             {
-                // Load the native names.
-                try
-                {
-                    _UnrealPackage.NTLPackage = new NativesTablePackage();
-                    _UnrealPackage.NTLPackage.LoadPackage(ntlPath);
-                }
-                catch (Exception e)
-                {
-                    _UnrealPackage.NTLPackage = null;
-                    throw new UnrealException
-                    (
-                        String.Format("Couldn't load {0}! \r\nEvent:Loading Package", ntlPath), e
-                    );
-                }
+                using var ntlFileStream = File.Open(ntlPath, FileMode.Open, FileAccess.Read, FileShare.Read);
+                _UnrealPackage.NTLPackage = new NativesTablePackage();
+                _UnrealPackage.NTLPackage.Deserialize(ntlFileStream);
             }
 
             InitializeMetaInfo();

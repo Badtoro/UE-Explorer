@@ -125,6 +125,16 @@ namespace UEExplorer.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap Copy {
+            get {
+                object obj = ResourceManager.GetObject("Copy", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Couldn&apos;t reload due this error:
         ///
         ///	{0}.
@@ -262,15 +272,6 @@ namespace UEExplorer.Properties {
         internal static string HexView_Offset {
             get {
                 return ResourceManager.GetString("HexView_Offset", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Position: {0} + {1} ; 0x{2:x8}.
-        /// </summary>
-        internal static string HexView_Position {
-            get {
-                return ResourceManager.GetString("HexView_Position", resourceCulture);
             }
         }
         
@@ -667,6 +668,16 @@ namespace UEExplorer.Properties {
         internal static string PACKAGE_UNKNOWN_SIGNATURE {
             get {
                 return ResourceManager.GetString("PACKAGE_UNKNOWN_SIGNATURE", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap Paste {
+            get {
+                object obj = ResourceManager.GetObject("Paste", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
             }
         }
         

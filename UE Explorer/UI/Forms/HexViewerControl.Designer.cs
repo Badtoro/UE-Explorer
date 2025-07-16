@@ -29,38 +29,14 @@
 		private void InitializeComponent()
 		{
             this.components = new System.ComponentModel.Container();
-            System.Windows.Forms.SplitContainer splitContainer1;
+            System.Windows.Forms.SplitContainer hexViewSplitter;
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(HexViewerControl));
-            System.Windows.Forms.Label label14;
-            System.Windows.Forms.Label label13;
-            System.Windows.Forms.Label label11;
-            System.Windows.Forms.Label label10;
-            System.Windows.Forms.Label label9;
-            System.Windows.Forms.Label label7;
-            System.Windows.Forms.Label label8;
-            System.Windows.Forms.Label label6;
-            System.Windows.Forms.Label label5;
-            System.Windows.Forms.Label label4;
-            System.Windows.Forms.Label label3;
-            System.Windows.Forms.Label label2;
-            System.Windows.Forms.Label label1;
-            System.Windows.Forms.Panel panel1;
-            this.DataInfoPanel = new System.Windows.Forms.Panel();
-            this.DissambledStruct = new System.Windows.Forms.TextBox();
-            this.DissambledIndex = new System.Windows.Forms.TextBox();
-            this.DissambledName = new System.Windows.Forms.TextBox();
-            this.DissambledObject = new System.Windows.Forms.TextBox();
-            this.DissambledFloat = new System.Windows.Forms.TextBox();
-            this.DissambledULong = new System.Windows.Forms.TextBox();
-            this.DissambledLong = new System.Windows.Forms.TextBox();
-            this.DissambledUInt = new System.Windows.Forms.TextBox();
-            this.DissambledInt = new System.Windows.Forms.TextBox();
-            this.DissambledUShort = new System.Windows.Forms.TextBox();
-            this.DissambledShort = new System.Windows.Forms.TextBox();
-            this.DissambledByte = new System.Windows.Forms.TextBox();
-            this.DissambledChar = new System.Windows.Forms.TextBox();
+            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle1 = new System.Windows.Forms.DataGridViewCellStyle();
             this.HexViewPanel = new UEExplorer.UI.Forms.HexViewerPanel();
             this.Context_Structure = new System.Windows.Forms.ContextMenuStrip(this.components);
+            this.clearToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.copyToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.pasteToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.editCellToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.editStructValueToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.cellToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -74,267 +50,51 @@
             this.structSizeToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripSeparator1 = new System.Windows.Forms.ToolStripSeparator();
             this.defineStructToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.HexViewScrollBar = new System.Windows.Forms.VScrollBar();
-            this.HexToolTip = new System.Windows.Forms.ToolTip(this.components);
             this.removeStructToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            splitContainer1 = new System.Windows.Forms.SplitContainer();
-            label14 = new System.Windows.Forms.Label();
-            label13 = new System.Windows.Forms.Label();
-            label11 = new System.Windows.Forms.Label();
-            label10 = new System.Windows.Forms.Label();
-            label9 = new System.Windows.Forms.Label();
-            label7 = new System.Windows.Forms.Label();
-            label8 = new System.Windows.Forms.Label();
-            label6 = new System.Windows.Forms.Label();
-            label5 = new System.Windows.Forms.Label();
-            label4 = new System.Windows.Forms.Label();
-            label3 = new System.Windows.Forms.Label();
-            label2 = new System.Windows.Forms.Label();
-            label1 = new System.Windows.Forms.Label();
-            panel1 = new System.Windows.Forms.Panel();
-            ((System.ComponentModel.ISupportInitialize)(splitContainer1)).BeginInit();
-            splitContainer1.Panel1.SuspendLayout();
-            splitContainer1.Panel2.SuspendLayout();
-            splitContainer1.SuspendLayout();
-            this.DataInfoPanel.SuspendLayout();
-            panel1.SuspendLayout();
+            this.HexViewScrollBar = new System.Windows.Forms.VScrollBar();
+            this.DataInfoPanel = new System.Windows.Forms.Panel();
+            this.SelectionDataGridView = new System.Windows.Forms.DataGridView();
+            this.Type = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.Value = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.HexToolTip = new System.Windows.Forms.ToolTip(this.components);
+            this.caretTimer = new System.Windows.Forms.Timer(this.components);
+            hexViewSplitter = new System.Windows.Forms.SplitContainer();
+            ((System.ComponentModel.ISupportInitialize)(hexViewSplitter)).BeginInit();
+            hexViewSplitter.Panel1.SuspendLayout();
+            hexViewSplitter.Panel2.SuspendLayout();
+            hexViewSplitter.SuspendLayout();
             this.Context_Structure.SuspendLayout();
+            this.DataInfoPanel.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.SelectionDataGridView)).BeginInit();
             this.SuspendLayout();
             // 
-            // splitContainer1
+            // hexViewSplitter
             // 
-            splitContainer1.DataBindings.Add(new System.Windows.Forms.Binding("SplitterDistance", global::UEExplorer.Properties.Settings.Default, "HexPanel_SplitterDistance", true, System.Windows.Forms.DataSourceUpdateMode.OnPropertyChanged));
-            resources.ApplyResources(splitContainer1, "splitContainer1");
-            splitContainer1.FixedPanel = System.Windows.Forms.FixedPanel.Panel1;
-            splitContainer1.Name = "splitContainer1";
+            hexViewSplitter.DataBindings.Add(new System.Windows.Forms.Binding("SplitterDistance", global::UEExplorer.Properties.Settings.Default, "HexViewer_SplitterDistance", true, System.Windows.Forms.DataSourceUpdateMode.OnPropertyChanged));
+            resources.ApplyResources(hexViewSplitter, "hexViewSplitter");
+            hexViewSplitter.FixedPanel = System.Windows.Forms.FixedPanel.Panel2;
+            hexViewSplitter.Name = "hexViewSplitter";
             // 
-            // splitContainer1.Panel1
+            // hexViewSplitter.Panel1
             // 
-            splitContainer1.Panel1.Controls.Add(this.DataInfoPanel);
+            hexViewSplitter.Panel1.Controls.Add(this.HexViewPanel);
+            hexViewSplitter.Panel1.Controls.Add(this.HexViewScrollBar);
             // 
-            // splitContainer1.Panel2
+            // hexViewSplitter.Panel2
             // 
-            splitContainer1.Panel2.Controls.Add(panel1);
-            splitContainer1.SplitterDistance = global::UEExplorer.Properties.Settings.Default.HexPanel_SplitterDistance;
-            splitContainer1.TabStop = false;
-            splitContainer1.KeyDown += new System.Windows.Forms.KeyEventHandler(this.HexViewPanel_KeyDown);
-            // 
-            // DataInfoPanel
-            // 
-            resources.ApplyResources(this.DataInfoPanel, "DataInfoPanel");
-            this.DataInfoPanel.Controls.Add(label14);
-            this.DataInfoPanel.Controls.Add(this.DissambledStruct);
-            this.DataInfoPanel.Controls.Add(label13);
-            this.DataInfoPanel.Controls.Add(this.DissambledIndex);
-            this.DataInfoPanel.Controls.Add(this.DissambledName);
-            this.DataInfoPanel.Controls.Add(label11);
-            this.DataInfoPanel.Controls.Add(this.DissambledObject);
-            this.DataInfoPanel.Controls.Add(label10);
-            this.DataInfoPanel.Controls.Add(this.DissambledFloat);
-            this.DataInfoPanel.Controls.Add(label9);
-            this.DataInfoPanel.Controls.Add(this.DissambledULong);
-            this.DataInfoPanel.Controls.Add(label7);
-            this.DataInfoPanel.Controls.Add(this.DissambledLong);
-            this.DataInfoPanel.Controls.Add(label8);
-            this.DataInfoPanel.Controls.Add(this.DissambledUInt);
-            this.DataInfoPanel.Controls.Add(label6);
-            this.DataInfoPanel.Controls.Add(this.DissambledInt);
-            this.DataInfoPanel.Controls.Add(label5);
-            this.DataInfoPanel.Controls.Add(this.DissambledUShort);
-            this.DataInfoPanel.Controls.Add(label4);
-            this.DataInfoPanel.Controls.Add(this.DissambledShort);
-            this.DataInfoPanel.Controls.Add(label3);
-            this.DataInfoPanel.Controls.Add(label2);
-            this.DataInfoPanel.Controls.Add(this.DissambledByte);
-            this.DataInfoPanel.Controls.Add(label1);
-            this.DataInfoPanel.Controls.Add(this.DissambledChar);
-            this.DataInfoPanel.Name = "DataInfoPanel";
-            // 
-            // label14
-            // 
-            resources.ApplyResources(label14, "label14");
-            label14.ForeColor = System.Drawing.Color.SaddleBrown;
-            label14.Name = "label14";
-            // 
-            // DissambledStruct
-            // 
-            resources.ApplyResources(this.DissambledStruct, "DissambledStruct");
-            this.DissambledStruct.ForeColor = System.Drawing.SystemColors.GrayText;
-            this.DissambledStruct.Name = "DissambledStruct";
-            this.DissambledStruct.ReadOnly = true;
-            // 
-            // label13
-            // 
-            resources.ApplyResources(label13, "label13");
-            label13.ForeColor = System.Drawing.Color.MediumOrchid;
-            label13.Name = "label13";
-            // 
-            // DissambledIndex
-            // 
-            resources.ApplyResources(this.DissambledIndex, "DissambledIndex");
-            this.DissambledIndex.ForeColor = System.Drawing.SystemColors.GrayText;
-            this.DissambledIndex.Name = "DissambledIndex";
-            this.DissambledIndex.ReadOnly = true;
-            // 
-            // DissambledName
-            // 
-            resources.ApplyResources(this.DissambledName, "DissambledName");
-            this.DissambledName.ForeColor = System.Drawing.SystemColors.GrayText;
-            this.DissambledName.Name = "DissambledName";
-            this.DissambledName.ReadOnly = true;
-            // 
-            // label11
-            // 
-            resources.ApplyResources(label11, "label11");
-            label11.ForeColor = System.Drawing.Color.Green;
-            label11.Name = "label11";
-            // 
-            // DissambledObject
-            // 
-            resources.ApplyResources(this.DissambledObject, "DissambledObject");
-            this.DissambledObject.ForeColor = System.Drawing.SystemColors.GrayText;
-            this.DissambledObject.Name = "DissambledObject";
-            this.DissambledObject.ReadOnly = true;
-            // 
-            // label10
-            // 
-            resources.ApplyResources(label10, "label10");
-            label10.ForeColor = System.Drawing.Color.DarkTurquoise;
-            label10.Name = "label10";
-            // 
-            // DissambledFloat
-            // 
-            resources.ApplyResources(this.DissambledFloat, "DissambledFloat");
-            this.DissambledFloat.ForeColor = System.Drawing.SystemColors.GrayText;
-            this.DissambledFloat.Name = "DissambledFloat";
-            this.DissambledFloat.ReadOnly = true;
-            // 
-            // label9
-            // 
-            resources.ApplyResources(label9, "label9");
-            label9.ForeColor = System.Drawing.Color.SlateBlue;
-            label9.Name = "label9";
-            // 
-            // DissambledULong
-            // 
-            resources.ApplyResources(this.DissambledULong, "DissambledULong");
-            this.DissambledULong.ForeColor = System.Drawing.SystemColors.GrayText;
-            this.DissambledULong.Name = "DissambledULong";
-            this.DissambledULong.ReadOnly = true;
-            // 
-            // label7
-            // 
-            resources.ApplyResources(label7, "label7");
-            label7.ForeColor = System.Drawing.Color.Purple;
-            label7.Name = "label7";
-            // 
-            // DissambledLong
-            // 
-            resources.ApplyResources(this.DissambledLong, "DissambledLong");
-            this.DissambledLong.ForeColor = System.Drawing.SystemColors.GrayText;
-            this.DissambledLong.Name = "DissambledLong";
-            this.DissambledLong.ReadOnly = true;
-            // 
-            // label8
-            // 
-            resources.ApplyResources(label8, "label8");
-            label8.ForeColor = System.Drawing.Color.Purple;
-            label8.Name = "label8";
-            // 
-            // DissambledUInt
-            // 
-            resources.ApplyResources(this.DissambledUInt, "DissambledUInt");
-            this.DissambledUInt.ForeColor = System.Drawing.SystemColors.GrayText;
-            this.DissambledUInt.Name = "DissambledUInt";
-            this.DissambledUInt.ReadOnly = true;
-            // 
-            // label6
-            // 
-            resources.ApplyResources(label6, "label6");
-            label6.ForeColor = System.Drawing.Color.DodgerBlue;
-            label6.Name = "label6";
-            // 
-            // DissambledInt
-            // 
-            resources.ApplyResources(this.DissambledInt, "DissambledInt");
-            this.DissambledInt.ForeColor = System.Drawing.SystemColors.GrayText;
-            this.DissambledInt.Name = "DissambledInt";
-            this.DissambledInt.ReadOnly = true;
-            // 
-            // label5
-            // 
-            resources.ApplyResources(label5, "label5");
-            label5.ForeColor = System.Drawing.Color.DodgerBlue;
-            label5.Name = "label5";
-            // 
-            // DissambledUShort
-            // 
-            resources.ApplyResources(this.DissambledUShort, "DissambledUShort");
-            this.DissambledUShort.ForeColor = System.Drawing.SystemColors.GrayText;
-            this.DissambledUShort.Name = "DissambledUShort";
-            this.DissambledUShort.ReadOnly = true;
-            // 
-            // label4
-            // 
-            resources.ApplyResources(label4, "label4");
-            label4.ForeColor = System.Drawing.Color.MediumBlue;
-            label4.Name = "label4";
-            // 
-            // DissambledShort
-            // 
-            resources.ApplyResources(this.DissambledShort, "DissambledShort");
-            this.DissambledShort.ForeColor = System.Drawing.SystemColors.GrayText;
-            this.DissambledShort.Name = "DissambledShort";
-            this.DissambledShort.ReadOnly = true;
-            // 
-            // label3
-            // 
-            resources.ApplyResources(label3, "label3");
-            label3.ForeColor = System.Drawing.Color.MediumBlue;
-            label3.Name = "label3";
-            // 
-            // label2
-            // 
-            resources.ApplyResources(label2, "label2");
-            label2.ForeColor = System.Drawing.Color.Peru;
-            label2.Name = "label2";
-            // 
-            // DissambledByte
-            // 
-            resources.ApplyResources(this.DissambledByte, "DissambledByte");
-            this.DissambledByte.ForeColor = System.Drawing.SystemColors.GrayText;
-            this.DissambledByte.Name = "DissambledByte";
-            this.DissambledByte.ReadOnly = true;
-            // 
-            // label1
-            // 
-            resources.ApplyResources(label1, "label1");
-            label1.ForeColor = System.Drawing.Color.DarkBlue;
-            label1.Name = "label1";
-            // 
-            // DissambledChar
-            // 
-            resources.ApplyResources(this.DissambledChar, "DissambledChar");
-            this.DissambledChar.ForeColor = System.Drawing.SystemColors.GrayText;
-            this.DissambledChar.Name = "DissambledChar";
-            this.DissambledChar.ReadOnly = true;
-            // 
-            // panel1
-            // 
-            panel1.Controls.Add(this.HexViewPanel);
-            panel1.Controls.Add(this.HexViewScrollBar);
-            resources.ApplyResources(panel1, "panel1");
-            panel1.Name = "panel1";
+            hexViewSplitter.Panel2.Controls.Add(this.DataInfoPanel);
+            hexViewSplitter.SplitterDistance = global::UEExplorer.Properties.Settings.Default.HexViewer_SplitterDistance;
+            hexViewSplitter.TabStop = false;
             // 
             // HexViewPanel
             // 
             this.HexViewPanel.ContextMenuStrip = this.Context_Structure;
             resources.ApplyResources(this.HexViewPanel, "HexViewPanel");
             this.HexViewPanel.Name = "HexViewPanel";
-            this.HexViewPanel.Paint += new System.Windows.Forms.PaintEventHandler(this.HexLinePanel_Paint);
-            this.HexViewPanel.KeyDown += new System.Windows.Forms.KeyEventHandler(this.HexViewPanel_KeyDown);
-            this.HexViewPanel.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.HexViewPanel_KeyPress);
             this.HexViewPanel.KeyUp += new System.Windows.Forms.KeyEventHandler(this.HexViewPanel_KeyUp);
+            this.HexViewPanel.KeyDown += new System.Windows.Forms.KeyEventHandler(this.HexViewPanel_KeyDown);
+            this.HexViewPanel.Click += new System.EventHandler(this.HexViewPanel_Click);
+            this.HexViewPanel.Paint += new System.Windows.Forms.PaintEventHandler(this.HexLinePanel_Paint);
             this.HexViewPanel.MouseClick += new System.Windows.Forms.MouseEventHandler(this.HexLinePanel_MouseClick);
             this.HexViewPanel.MouseDoubleClick += new System.Windows.Forms.MouseEventHandler(this.HexLinePanel_MouseDoubleClick);
             this.HexViewPanel.MouseMove += new System.Windows.Forms.MouseEventHandler(this.HexLinePanel_MouseMove);
@@ -342,6 +102,9 @@
             // Context_Structure
             // 
             this.Context_Structure.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.clearToolStripMenuItem,
+            this.copyToolStripMenuItem,
+            this.pasteToolStripMenuItem,
             this.editCellToolStripMenuItem,
             this.cellToolStripMenuItem,
             this.toolStripSeparator1,
@@ -350,6 +113,27 @@
             this.Context_Structure.Name = "Context_Structure";
             resources.ApplyResources(this.Context_Structure, "Context_Structure");
             this.Context_Structure.Opening += new System.ComponentModel.CancelEventHandler(this.Context_Structure_Opening);
+            // 
+            // clearToolStripMenuItem
+            // 
+            this.clearToolStripMenuItem.Image = global::UEExplorer.Properties.Resources.History;
+            this.clearToolStripMenuItem.Name = "clearToolStripMenuItem";
+            resources.ApplyResources(this.clearToolStripMenuItem, "clearToolStripMenuItem");
+            this.clearToolStripMenuItem.Click += new System.EventHandler(this.clearToolStripMenuItem_Click);
+            // 
+            // copyToolStripMenuItem
+            // 
+            this.copyToolStripMenuItem.Image = global::UEExplorer.Properties.Resources.Copy;
+            this.copyToolStripMenuItem.Name = "copyToolStripMenuItem";
+            resources.ApplyResources(this.copyToolStripMenuItem, "copyToolStripMenuItem");
+            this.copyToolStripMenuItem.Click += new System.EventHandler(this.copyToolStripMenuItem_Click);
+            // 
+            // pasteToolStripMenuItem
+            // 
+            this.pasteToolStripMenuItem.Image = global::UEExplorer.Properties.Resources.Paste;
+            this.pasteToolStripMenuItem.Name = "pasteToolStripMenuItem";
+            resources.ApplyResources(this.pasteToolStripMenuItem, "pasteToolStripMenuItem");
+            this.pasteToolStripMenuItem.Click += new System.EventHandler(this.pasteToolStripMenuItem_Click);
             // 
             // editCellToolStripMenuItem
             // 
@@ -378,8 +162,9 @@
             this.structValueToolStripMenuItem,
             this.toolStripMenuItem1,
             this.structSizeToolStripMenuItem});
-            resources.ApplyResources(this.cellToolStripMenuItem, "cellToolStripMenuItem");
+            this.cellToolStripMenuItem.Image = global::UEExplorer.Properties.Resources.Copy;
             this.cellToolStripMenuItem.Name = "cellToolStripMenuItem";
+            resources.ApplyResources(this.cellToolStripMenuItem, "cellToolStripMenuItem");
             this.cellToolStripMenuItem.Tag = "Cell";
             // 
             // hexValueToolStripMenuItem
@@ -450,12 +235,6 @@
             this.defineStructToolStripMenuItem.Tag = "Cell";
             this.defineStructToolStripMenuItem.Click += new System.EventHandler(this.defineStructToolStripMenuItem_Click);
             // 
-            // HexViewScrollBar
-            // 
-            resources.ApplyResources(this.HexViewScrollBar, "HexViewScrollBar");
-            this.HexViewScrollBar.Name = "HexViewScrollBar";
-            this.HexViewScrollBar.Scroll += new System.Windows.Forms.ScrollEventHandler(this.HexScrollBar_Scroll);
-            // 
             // removeStructToolStripMenuItem
             // 
             this.removeStructToolStripMenuItem.Name = "removeStructToolStripMenuItem";
@@ -463,23 +242,92 @@
             this.removeStructToolStripMenuItem.Tag = "Struct";
             this.removeStructToolStripMenuItem.Click += new System.EventHandler(this.removeStructToolStripMenuItem_Click);
             // 
+            // HexViewScrollBar
+            // 
+            resources.ApplyResources(this.HexViewScrollBar, "HexViewScrollBar");
+            this.HexViewScrollBar.Name = "HexViewScrollBar";
+            this.HexViewScrollBar.Scroll += new System.Windows.Forms.ScrollEventHandler(this.HexScrollBar_Scroll);
+            this.HexViewScrollBar.PreviewKeyDown += new System.Windows.Forms.PreviewKeyDownEventHandler(this.OnHexViewScrollBarOnPreviewKeyDown);
+            // 
+            // DataInfoPanel
+            // 
+            resources.ApplyResources(this.DataInfoPanel, "DataInfoPanel");
+            this.DataInfoPanel.Controls.Add(this.SelectionDataGridView);
+            this.DataInfoPanel.Name = "DataInfoPanel";
+            // 
+            // SelectionDataGridView
+            // 
+            this.SelectionDataGridView.AllowUserToAddRows = false;
+            this.SelectionDataGridView.AllowUserToDeleteRows = false;
+            this.SelectionDataGridView.AllowUserToOrderColumns = true;
+            this.SelectionDataGridView.AllowUserToResizeRows = false;
+            this.SelectionDataGridView.AutoSizeColumnsMode = System.Windows.Forms.DataGridViewAutoSizeColumnsMode.Fill;
+            this.SelectionDataGridView.BackgroundColor = System.Drawing.SystemColors.Control;
+            this.SelectionDataGridView.BorderStyle = System.Windows.Forms.BorderStyle.None;
+            this.SelectionDataGridView.CellBorderStyle = System.Windows.Forms.DataGridViewCellBorderStyle.None;
+            this.SelectionDataGridView.ColumnHeadersBorderStyle = System.Windows.Forms.DataGridViewHeaderBorderStyle.None;
+            this.SelectionDataGridView.Columns.AddRange(new System.Windows.Forms.DataGridViewColumn[] {
+            this.Type,
+            this.Value});
+            resources.ApplyResources(this.SelectionDataGridView, "SelectionDataGridView");
+            this.SelectionDataGridView.EditMode = System.Windows.Forms.DataGridViewEditMode.EditProgrammatically;
+            this.SelectionDataGridView.EnableHeadersVisualStyles = false;
+            this.SelectionDataGridView.GridColor = System.Drawing.SystemColors.Control;
+            this.SelectionDataGridView.MultiSelect = false;
+            this.SelectionDataGridView.Name = "SelectionDataGridView";
+            this.SelectionDataGridView.ReadOnly = true;
+            this.SelectionDataGridView.RowHeadersBorderStyle = System.Windows.Forms.DataGridViewHeaderBorderStyle.None;
+            dataGridViewCellStyle1.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleLeft;
+            dataGridViewCellStyle1.BackColor = System.Drawing.SystemColors.Control;
+            dataGridViewCellStyle1.Font = new System.Drawing.Font("Consolas", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            dataGridViewCellStyle1.ForeColor = System.Drawing.SystemColors.WindowText;
+            dataGridViewCellStyle1.SelectionBackColor = System.Drawing.SystemColors.Highlight;
+            dataGridViewCellStyle1.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
+            dataGridViewCellStyle1.WrapMode = System.Windows.Forms.DataGridViewTriState.True;
+            this.SelectionDataGridView.RowHeadersDefaultCellStyle = dataGridViewCellStyle1;
+            this.SelectionDataGridView.RowHeadersVisible = false;
+            this.SelectionDataGridView.RowTemplate.ReadOnly = true;
+            this.SelectionDataGridView.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.CellSelect;
+            this.SelectionDataGridView.ShowEditingIcon = false;
+            this.SelectionDataGridView.ShowRowErrors = false;
+            this.SelectionDataGridView.RowEnter += new System.Windows.Forms.DataGridViewCellEventHandler(this.SelectionDataGridView_RowEnter);
+            // 
+            // Type
+            // 
+            this.Type.FillWeight = 60.9137F;
+            resources.ApplyResources(this.Type, "Type");
+            this.Type.Name = "Type";
+            this.Type.ReadOnly = true;
+            // 
+            // Value
+            // 
+            this.Value.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.Fill;
+            this.Value.FillWeight = 139.0863F;
+            resources.ApplyResources(this.Value, "Value");
+            this.Value.Name = "Value";
+            this.Value.ReadOnly = true;
+            // 
+            // caretTimer
+            // 
+            this.caretTimer.Interval = 1000;
+            this.caretTimer.Tick += new System.EventHandler(this.caretTimer_Tick);
+            // 
             // HexViewerControl
             // 
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.None;
             this.AutoValidate = System.Windows.Forms.AutoValidate.EnableAllowFocusChange;
-            this.Controls.Add(splitContainer1);
+            this.Controls.Add(hexViewSplitter);
             resources.ApplyResources(this, "$this");
             this.Name = "HexViewerControl";
             this.Load += new System.EventHandler(this.HexViewerControl_Load);
             this.Scroll += new System.Windows.Forms.ScrollEventHandler(this.HexViewerControl_Scroll);
-            splitContainer1.Panel1.ResumeLayout(false);
-            splitContainer1.Panel2.ResumeLayout(false);
-            ((System.ComponentModel.ISupportInitialize)(splitContainer1)).EndInit();
-            splitContainer1.ResumeLayout(false);
-            this.DataInfoPanel.ResumeLayout(false);
-            this.DataInfoPanel.PerformLayout();
-            panel1.ResumeLayout(false);
+            hexViewSplitter.Panel1.ResumeLayout(false);
+            hexViewSplitter.Panel2.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)(hexViewSplitter)).EndInit();
+            hexViewSplitter.ResumeLayout(false);
             this.Context_Structure.ResumeLayout(false);
+            this.DataInfoPanel.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)(this.SelectionDataGridView)).EndInit();
             this.ResumeLayout(false);
 
 		}
@@ -487,20 +335,7 @@
 		#endregion
 		private System.Windows.Forms.VScrollBar HexViewScrollBar;
 		private HexViewerPanel HexViewPanel;
-		private System.Windows.Forms.TextBox DissambledChar;
-		private System.Windows.Forms.TextBox DissambledByte;
-		private System.Windows.Forms.TextBox DissambledShort;
-		private System.Windows.Forms.TextBox DissambledInt;
-		private System.Windows.Forms.TextBox DissambledUShort;
-		private System.Windows.Forms.TextBox DissambledUInt;
-		private System.Windows.Forms.TextBox DissambledFloat;
-		private System.Windows.Forms.TextBox DissambledULong;
-		private System.Windows.Forms.TextBox DissambledLong;
-		private System.Windows.Forms.TextBox DissambledName;
-		private System.Windows.Forms.TextBox DissambledObject;
-		private System.Windows.Forms.TextBox DissambledIndex;
 		private System.Windows.Forms.ContextMenuStrip Context_Structure;
-		private System.Windows.Forms.TextBox DissambledStruct;
 		private System.Windows.Forms.ToolTip HexToolTip;
         private System.Windows.Forms.Panel DataInfoPanel;
         private System.Windows.Forms.ToolStripMenuItem editCellToolStripMenuItem;
@@ -517,5 +352,12 @@
         private System.Windows.Forms.ToolStripMenuItem editStructValueToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem defineStructToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem removeStructToolStripMenuItem;
+        private System.Windows.Forms.DataGridView SelectionDataGridView;
+        private System.Windows.Forms.DataGridViewTextBoxColumn Type;
+        private System.Windows.Forms.DataGridViewTextBoxColumn Value;
+        private System.Windows.Forms.ToolStripMenuItem copyToolStripMenuItem;
+        private System.Windows.Forms.Timer caretTimer;
+        private System.Windows.Forms.ToolStripMenuItem clearToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem pasteToolStripMenuItem;
     }
 }

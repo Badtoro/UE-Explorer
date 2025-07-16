@@ -27,10 +27,13 @@
       <Value Profile="(Default)">Normal</Value>
     </Setting>
     <Setting Name="HexPanel_SplitterDistance" Type="System.Int32" Scope="User">
-      <Value Profile="(Default)">219</Value>
+      <Value Profile="(Default)">643</Value>
     </Setting>
     <Setting Name="PackageExplorer_SplitterDistance" Type="System.Int32" Scope="User">
       <Value Profile="(Default)">330</Value>
+    </Setting>
+    <Setting Name="HexViewer_SplitterDistance" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">680</Value>
     </Setting>
   </Settings>
 </SettingsFile>

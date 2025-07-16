@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>net48</TargetFramework>
+    <LangVersion>12</LangVersion>
     <Platform Condition=" '$(Platform)' == '' ">x86</Platform>
     <OutputType>WinExe</OutputType>
     <RootNamespace>UEExplorer</RootNamespace>
@@ -44,6 +45,24 @@
     <ImportWindowsDesktopTargets>true</ImportWindowsDesktopTargets>
 	  <EmbeddedResourceUseDependentUponConvention>true</EmbeddedResourceUseDependentUponConvention>
     <GenerateResourceUsePreserializedResources>true</GenerateResourceUsePreserializedResources>
+    <Nullable>enable</Nullable>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <TargetZone>Internet</TargetZone>
+    <IsPublishable>False</IsPublishable>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <Title>UE Explorer</Title>
+    <Version>$(VersionPrefix)1.5.0</Version>
+    <Authors>EliotVU</Authors>
+    <Copyright>© 2009-2025 Eliot van Uytfanghe. All rights reserved.</Copyright>
+    <Description>An easy-to-use browser and decompiler for Unreal Engine packages (.upk, .u).</Description>
+    <PackageIcon />
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <RepositoryUrl>https://github.com/UE-Explorer/UE-Explorer</RepositoryUrl>
+    <PackageProjectUrl>https://eliotvu.com/portfolio/view/21/ue-explorer</PackageProjectUrl>
+    <Product>$(Title)</Product>
+    <AssemblyName>$(MSBuildProjectName)</AssemblyName>
+    <NeutralLanguage>en</NeutralLanguage>
+    <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
     <DocumentationFile></DocumentationFile>
@@ -82,6 +101,13 @@
     <Reference Update="WindowsFormsIntegration">
       <EmbedInteropTypes>False</EmbedInteropTypes>
     </Reference>
+    <PackageReference Include="Autoupdater.NET.Official" Version="1.9.2" />
+    <PackageReference Include="AvalonEdit" Version="6.3.1.120" />
+    <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.3351.48" />
+    <PackageReference Include="System.Reactive" Version="6.0.1" />
+    <PackageReference Include="System.Resources.Extensions" Version="9.0.7" />
+    <PackageReference Include="Microsoft.VisualBasic" Version="10.3.0" />
+    <PackageReference Include="Microsoft.Bcl.Memory" Version="9.0.7" />
   </ItemGroup>
   <ItemGroup>
     <Compile Update="Properties\Resources.Designer.cs">
@@ -262,21 +288,4 @@
       <UserProperties BuildVersion_UpdateAssemblyVersion="True" BuildVersion_UpdateFileVersion="True" BuildVersion_BuildVersioningStyle="None.None.Increment.None" />
     </VisualStudio>
   </ProjectExtensions>
-  <PropertyGroup>
-    <IsPublishable>False</IsPublishable>
-    <PlatformTarget>AnyCPU</PlatformTarget>
-    <Title>UE Explorer</Title>
-    <Version>$(VersionPrefix)1.4.6</Version>
-    <Authors>EliotVU</Authors>
-    <Copyright>© 2009-2025 Eliot van Uytfanghe. All rights reserved.</Copyright>
-    <Description>An easy-to-use browser and decompiler for Unreal Engine packages (.upk, .u).</Description>
-    <PackageIcon></PackageIcon>
-    <PackageReadmeFile>README.md</PackageReadmeFile>
-    <RepositoryUrl>https://github.com/UE-Explorer/UE-Explorer</RepositoryUrl>
-    <PackageProjectUrl>https://eliotvu.com/portfolio/view/21/ue-explorer</PackageProjectUrl>
-    <Product>$(Title)</Product>
-    <AssemblyName>$(MSBuildProjectName)</AssemblyName>
-    <NeutralLanguage>en</NeutralLanguage>
-    <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
-  </PropertyGroup>
 </Project>

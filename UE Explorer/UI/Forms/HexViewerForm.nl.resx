@@ -120,7 +120,7 @@
   <data name="SizeLabel.Text" xml:space="preserve">
     <value>Grootte: {0}</value>
   </data>
-  <data name="ToolStripStatusLabel_Position.Text" xml:space="preserve">
+  <data name="positionToolStripStatusLabel.Text" xml:space="preserve">
     <value>Positie: {0}</value>
   </data>
   <data name="fileToolStripMenuItem.Text" xml:space="preserve">

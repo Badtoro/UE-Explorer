@@ -1,20 +1,23 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Diagnostics.Contracts;
 using System.Drawing;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Reactive.Linq;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
 using System.Xml;
 using System.Xml.Serialization;
-using Eliot.Utilities;
 using UEExplorer.UI.Dialogs;
-using UELib.Annotations;
 using UELib.Branch;
 using UELib.Core;
+using UELib.UnrealScript;
+using ArgumentOutOfRangeException = System.ArgumentOutOfRangeException;
 
 namespace UEExplorer.UI.Forms
 {
@@ -24,15 +27,14 @@ namespace UEExplorer.UI.Forms
 
     public partial class HexViewerControl : UserControl
     {
-        public byte[] Buffer { get; set; }
+        public byte[] Buffer { get; set; } = [];
         public IBuffered Target { get; private set; }
 
-        public class HexMetaInfo
+        public sealed class HexMetaInfo
         {
-            public class BytesMetaInfo
+            public sealed class BytesMetaInfo
             {
-                [XmlElement("Position")]
-                public int Offset;
+                [XmlElement("Position")] public int Offset;
 
                 [XmlIgnore] public int Size;
 
@@ -44,29 +46,35 @@ namespace UEExplorer.UI.Forms
 
                 [XmlIgnore] public Color Color;
 
-                [XmlIgnore] public IUnrealDecompilable Tag;
+                [XmlIgnore] public IUnrealDecompilable? Tag;
             }
 
-            public List<BytesMetaInfo> MetaInfoList;
+            public List<BytesMetaInfo> MetaInfoList = [];
         }
 
-        private HexMetaInfo _Structure;
+        private HexMetaInfo _Patterns = new();
 
-        private class CellState
+        public List<HexMetaInfo.BytesMetaInfo> PatternRegions => _Patterns.MetaInfoList;
+
+        private sealed class CellState
         {
             public bool IsModified;
+            public byte OriginalValue;
         }
 
-        private readonly Dictionary<int, CellState> _CellStates = new Dictionary<int, CellState>();
+        private readonly Dictionary<int, CellState> _CellStates = [];
 
         #region View Properties
 
         private const int CellCount = 16;
         private const float CellPadding = 6;
-        private float CellWidth => HexViewPanel.Font.Height + CellPadding;
-        private float CellHeight => HexViewPanel.Font.Height;
-        private float ColumnWidth => CellCount * CellWidth;
+        private float CellWidth { get; set; }
+        private float CellHeight { get; set; }
+        private Font CellFont { get; set; }
+        private float ColumnWidth { get; set; }
         private const float ColumnMargin = 8;
+
+        private float NibbleWidth { get; set; }
 
         private bool _DrawASCII = true;
 
@@ -76,7 +84,7 @@ namespace UEExplorer.UI.Forms
             set
             {
                 _DrawASCII = value;
-                HexViewPanel.Invalidate();
+                UpdateView();
             }
         }
 
@@ -88,11 +96,13 @@ namespace UEExplorer.UI.Forms
             set
             {
                 _DrawByte = value;
-                HexViewPanel.Invalidate();
+                UpdateView();
             }
         }
 
         #endregion
+
+        public bool CanEdit { get; set; }
 
         [DllImport("user32.dll")]
         static extern int SendMessage(IntPtr hWnd, uint wMsg, IntPtr wParam, IntPtr lParam);
@@ -100,8 +110,6 @@ namespace UEExplorer.UI.Forms
         public HexViewerControl()
         {
             InitializeComponent();
-
-            CellModifiedFont = new Font(HexViewPanel.Font, FontStyle.Italic | FontStyle.Bold);
 
             _UnderlinePen = new Pen(_UnderlineBrush);
 
@@ -112,33 +120,352 @@ namespace UEExplorer.UI.Forms
             _LineHoverPen = _HoverPen;
             _ForeBrush = new SolidBrush(Color.Black);
             _WhiteForeBrush = new SolidBrush(Color.White);
-            _ActiveNibbleBrush = new SolidBrush(Color.FromArgb(unchecked((int)0xEE000000)));
+            _ActiveNibbleBrush = new SolidBrush(Color.FromArgb(unchecked((int)0xFF228282)));
 
             _AddressSample = $"{99999999:x8}".PadLeft(8, '0').ToUpper();
             _MuteBrush = _EvenBrush;
             _BorderPen = new Pen(_BorderBrush);
+
+            HexViewPanel.FontChanged += (_, _) =>
+            {
+                UpdateScaling();
+            };
+
+            UpdateScaling();
+
+            SelectionDataGridView.Rows.AddRange(
+                new DataGridViewRow
+                {
+                    Cells =
+                    {
+                        new DataGridViewTextBoxCell { Value = "Char" },
+                        new DataGridViewTextBoxCell { Value = null, Tag = new UnrealPrimitiveParser<char>('0') }
+                    }
+                },
+                new DataGridViewRow
+                {
+                    Cells =
+                    {
+                        new DataGridViewTextBoxCell { Value = "Byte" },
+                        new DataGridViewTextBoxCell { Value = null, Tag = new UnrealPrimitiveParser<byte>(0) }
+                    }
+                },
+                new DataGridViewRow
+                {
+                    Cells =
+                    {
+                        new DataGridViewTextBoxCell { Value = "Short" },
+                        new DataGridViewTextBoxCell { Value = null, Tag = new UnrealPrimitiveParser<short>(0) }
+                    }
+                },
+                new DataGridViewRow
+                {
+                    Cells =
+                    {
+                        new DataGridViewTextBoxCell { Value = "UShort" },
+                        new DataGridViewTextBoxCell { Value = null, Tag = new UnrealPrimitiveParser<ushort>(0) }
+                    }
+                },
+                new DataGridViewRow
+                {
+                    Cells =
+                    {
+                        new DataGridViewTextBoxCell { Value = "Int" },
+                        new DataGridViewTextBoxCell { Value = null, Tag = new UnrealPrimitiveParser<int>(0) }
+                    }
+                },
+                new DataGridViewRow
+                {
+                    Cells =
+                    {
+                        new DataGridViewTextBoxCell { Value = "UInt" },
+                        new DataGridViewTextBoxCell { Value = null, Tag = new UnrealPrimitiveParser<uint>(0) }
+                    }
+                },
+                new DataGridViewRow
+                {
+                    Cells =
+                    {
+                        new DataGridViewTextBoxCell { Value = "Long" },
+                        new DataGridViewTextBoxCell { Value = null, Tag = new UnrealPrimitiveParser<long>(0) }
+                    }
+                },
+                new DataGridViewRow
+                {
+                    Cells =
+                    {
+                        new DataGridViewTextBoxCell { Value = "ULong" },
+                        new DataGridViewTextBoxCell { Value = null, Tag = new UnrealPrimitiveParser<ulong>(0) }
+                    }
+                },
+                new DataGridViewRow
+                {
+                    Cells =
+                    {
+                        new DataGridViewTextBoxCell { Value = "Float" },
+                        new DataGridViewTextBoxCell { Value = null, Tag = new UnrealPrimitiveParser<float>(0) }
+                    }
+                },
+                new DataGridViewRow
+                {
+                    Cells =
+                    {
+                        new DataGridViewTextBoxCell { Value = "Object" },
+                        new DataGridViewTextBoxCell { Value = null, Tag = new UnrealObjectParser() }
+                    }
+                },
+                new DataGridViewRow
+                {
+                    Cells =
+                    {
+                        new DataGridViewTextBoxCell { Value = "Name" },
+                        new DataGridViewTextBoxCell { Value = null, Tag = new UnrealNameParser() }
+                    }
+                },
+                new DataGridViewRow
+                {
+                    Cells =
+                    {
+                        new DataGridViewTextBoxCell { Value = "Index" },
+                        new DataGridViewTextBoxCell { Value = null, Tag = new UnrealIndexParser() }
+                    }
+                },
+                new DataGridViewRow
+                {
+                    Cells =
+                    {
+                        new DataGridViewTextBoxCell { Value = "Struct" },
+                        new DataGridViewTextBoxCell { Value = null, Tag = new HexPatternParser(this) }
+                    }
+                }
+            );
+        }
+
+        private void UpdateScaling()
+        {
+            CellFont = HexViewPanel.Font;
+
+            CellModifiedFont?.Dispose();
+            CellModifiedFont = new Font(CellFont, FontStyle.Italic | FontStyle.Bold);
+
+            CellWidth = CellFont.Height + CellPadding;
+            CellHeight = CellFont.Height;
+            ColumnWidth = CellCount * CellWidth;
+
+            NibbleWidth = CellWidth * 0.5f;
+
+            _ActiveNibblePen?.Dispose();
+            _ActiveNibblePen = new Pen(
+                _ActiveNibbleBrush,
+                NibbleWidth
+            );
+        }
+
+        private IDisposable _MouseInputSubscription;
+
+        public sealed class HexMessageFilter(HexViewerControl hexViewer) : IMessageFilter
+        {
+            public bool PreFilterMessage(ref Message m)
+            {
+                if (m.Msg != 0x0100)
+                {
+                    return false;
+                }
+
+                if (m.WParam.ToInt32() != (int)Keys.Left &&
+                    m.WParam.ToInt32() != (int)Keys.Right &&
+                    m.WParam.ToInt32() != (int)Keys.Up &&
+                    m.WParam.ToInt32() != (int)Keys.Down)
+                {
+                    return false;
+                }
+
+                if (hexViewer.IsSelecting())
+                {
+                    hexViewer.HexViewPanel_KeyDown(hexViewer, new KeyEventArgs((Keys)m.WParam.ToInt32()));
+                }
+
+                return true;
+            }
+        }
+
+        protected override void OnHandleCreated(EventArgs e)
+        {
+            base.OnHandleCreated(e);
+
+            _HexMessageFilter = new HexMessageFilter(this);
+            Application.AddMessageFilter(_HexMessageFilter);
+        }
+
+        protected override void OnHandleDestroyed(EventArgs e)
+        {
+            Application.RemoveMessageFilter(_HexMessageFilter);
+
+            _MouseInputSubscription.Dispose();
+
+            _ForeBrush.Dispose();
+            _BorderBrush.Dispose();
+            _UnderlineBrush.Dispose();
+            _EvenBrush.Dispose();
+            _EvenLitBrush.Dispose();
+            _OddBrush.Dispose();
+            _OddLitBrush.Dispose();
+            _OffsetBrush.Dispose();
+            _SelectedBrush.Dispose();
+            _HoveredBrush.Dispose();
+            _HoveredFieldBrush.Dispose();
+            _WhiteForeBrush.Dispose();
+            _ActiveNibbleBrush.Dispose();
+            _MuteBrush.Dispose();
+
+            base.OnHandleDestroyed(e);
         }
 
         private void HexViewerControl_Load(object sender, EventArgs e)
         {
+            var focusPanel = HexViewPanel;
 
+            var mouseMoveObservable = Observable
+                .FromEvent<MouseEventHandler, MouseEventArgs>(
+                    handler => (_, e) => { handler(e); },
+                    handler => focusPanel.MouseMove += handler,
+                    handler => focusPanel.MouseMove -= handler
+                );
+
+            var mouseDownObservable = Observable
+                .FromEvent<MouseEventHandler, MouseEventArgs>(
+                    handler => (_, e) => { handler(e); },
+                    handler => focusPanel.MouseDown += handler,
+                    handler => focusPanel.MouseDown -= handler
+                );
+
+            var mouseUpObservable = Observable
+                .FromEvent<MouseEventHandler, MouseEventArgs>(
+                    handler => (_, e) => { handler(e); },
+                    handler => focusPanel.MouseUp += handler,
+                    handler => focusPanel.MouseUp -= handler
+                );
+
+            _MouseInputSubscription = mouseDownObservable
+                .Where(mouseEvent =>
+                    mouseEvent.Button == MouseButtons.Left && GetCellIndex(mouseEvent.X, mouseEvent.Y) != -1)
+                .Select(mouseStartEvent =>
+                {
+                    focusPanel.Capture = true;
+                    Cursor.Clip = focusPanel.RectangleToScreen(focusPanel.ClientRectangle);
+                    ActiveControl = focusPanel;
+
+                    int startIndex, stopIndex, clickIndex;
+                    if ((ModifierKeys & Keys.Shift) != 0 && Selection.HasValue)
+                    {
+                        stopIndex = GetCellIndex(mouseStartEvent.X, mouseStartEvent.Y);
+                        startIndex = stopIndex < Selection.Value.Start.Value
+                            ? Selection.Value.End.Value
+                            : Selection.Value.Start.Value;
+
+                        clickIndex = startIndex;
+
+                        // Swap if we are selecting backwards.
+                        if (stopIndex < startIndex)
+                        {
+                            (startIndex, stopIndex) = (stopIndex, startIndex);
+                        }
+                    }
+                    else
+                    {
+                        startIndex = GetCellIndex(mouseStartEvent.X, mouseStartEvent.Y);
+                        stopIndex = startIndex;
+                        clickIndex = startIndex;
+                    }
+
+                    _DirectionalOffset = clickIndex;
+                    Selection = new Range(startIndex, stopIndex);
+
+                    // End editing.
+                    SetActiveCell(-1);
+
+                    return clickIndex;
+                })
+                .Select(clickIndex => mouseMoveObservable
+                    .Do(mouseEvent =>
+                    {
+                        // Scroll according to mouse position.
+                        var screenMouse = focusPanel.PointToScreen(new Point(mouseEvent.X, mouseEvent.Y));
+                        if (screenMouse.Y + CellHeight >= Cursor.Clip.Bottom)
+                        {
+                            HexViewScrollBar.Value = Math.Min(
+                                HexViewScrollBar.Maximum,
+                                HexViewScrollBar.Value + 1
+                            );
+
+                            UpdateView();
+                        }
+                        else if (screenMouse.Y - CellHeight * 2.5 <= Cursor.Clip.Top)
+                        {
+                            HexViewScrollBar.Value = Math.Max(
+                                HexViewScrollBar.Minimum,
+                                HexViewScrollBar.Value - 1
+                            );
+
+                            UpdateView();
+                        }
+                    })
+                    .Do(mouseEvent =>
+                    {
+                        int startIndex = clickIndex;
+
+                        int stopIndex = GetCellIndex(mouseEvent.X, mouseEvent.Y);
+                        if (stopIndex == -1)
+                        {
+                            return;
+                        }
+
+                        // Swap if we are selecting backwards.
+                        if (stopIndex < startIndex)
+                        {
+                            (startIndex, stopIndex) = (stopIndex, startIndex);
+                        }
+
+                        Selection = new Range(startIndex, stopIndex);
+
+                        UpdateView();
+                    })
+                    .TakeUntil(mouseUpObservable
+                        .Where(_ => (MouseButtons & MouseButtons.Left) == 0)
+                        .Do(mouseEvent =>
+                        {
+                            // So we can figure out the direction to shrink or expand, when using the shift key and arrows.
+                            int stopIndex = GetCellIndex(mouseEvent.X, mouseEvent.Y);
+                            _DirectionalOffset = stopIndex;
+                        }))
+                    .Finally(() =>
+                    {
+                        Cursor.Clip = Rectangle.Empty;
+
+                        ActiveControl = focusPanel;
+
+                        focusPanel.Capture = false;
+                    }))
+                .Switch()
+                .Subscribe();
+        }
+
+        private void UpdateView()
+        {
+            HexViewPanel.Invalidate();
         }
 
         private void LoadConfig(string path)
         {
-            using (var r = new XmlTextReader(path))
+            using var reader = new XmlTextReader(path);
+            var serializer = new XmlSerializer(typeof(HexMetaInfo));
+            _Patterns = (HexMetaInfo)serializer.Deserialize(reader)!;
+
+            foreach (var pattern in _Patterns.MetaInfoList.Where(pattern => pattern.Type != "Generated"))
             {
-                var xser = new XmlSerializer(typeof(HexMetaInfo));
-                _Structure = (HexMetaInfo)xser.Deserialize(r);
-
-                foreach (var s in _Structure.MetaInfoList.Where(s => s.Type != "Generated"))
-                {
-                    InitStructure(s.Type, out byte size, out var color);
-                    s.Size = size;
-                    s.Color = color;
-                }
-
-                HexViewPanel.Invalidate();
+                InitStructure(pattern.Type, out byte size, out var color);
+                pattern.Size = size;
+                pattern.Color = color;
             }
         }
 
@@ -212,21 +539,19 @@ namespace UEExplorer.UI.Forms
                 Directory.CreateDirectory(Path.GetDirectoryName(path));
             }
 
-            var backupInfo = _Structure.MetaInfoList.ToArray();
-            _Structure.MetaInfoList.RemoveAll(i => i.Type == "Generated");
-            using (var w = new XmlTextWriter(path, System.Text.Encoding.ASCII))
-            {
-                var xser = new XmlSerializer(typeof(HexMetaInfo));
-                xser.Serialize(w, _Structure);
-            }
+            var backupInfo = _Patterns.MetaInfoList.ToArray();
+            _Patterns.MetaInfoList.RemoveAll(i => i.Type == "Generated");
+            using var writer = new XmlTextWriter(path, System.Text.Encoding.ASCII);
+            var serializer = new XmlSerializer(typeof(HexMetaInfo));
+            serializer.Serialize(writer, _Patterns);
 
-            _Structure.MetaInfoList.AddRange(backupInfo);
+            _Patterns.MetaInfoList.AddRange(backupInfo);
         }
 
         public void SetHexData(IBuffered target)
         {
             Target = target ?? throw new Exception("target cannot be null");
-            
+
             Buffer = Target.CopyBuffer();
             UpdateScrollBar();
 
@@ -235,16 +560,18 @@ namespace UEExplorer.UI.Forms
             {
                 LoadConfig(path);
             }
-            else
-            {
-                _Structure = new HexMetaInfo { MetaInfoList = new List<HexMetaInfo.BytesMetaInfo>() };
-            }
 
             InitializeMetaInfoFields();
+
+            TargetChangedEvent?.Invoke(this, target);
+            SelectedOffset = -1;
+
+            UpdateView();
         }
 
         private void SetCellValue(int cellIndex, byte cellValue)
         {
+            byte originalValue = GetCellValue(cellIndex);
             Buffer[cellIndex] = cellValue;
             if (_CellStates.TryGetValue(cellIndex, out var cellState))
             {
@@ -252,27 +579,41 @@ namespace UEExplorer.UI.Forms
             }
             else
             {
-                _CellStates.Add(cellIndex, new CellState
-                {
-                    IsModified = true
-                });
+                _CellStates.Add(cellIndex, new CellState { IsModified = true, OriginalValue = originalValue });
             }
         }
-        
+
+        private void RestoreCellValue(int cellIndex)
+        {
+            if (!_CellStates.TryGetValue(cellIndex, out var cellState) || !cellState.IsModified)
+            {
+                return;
+            }
+
+            Buffer[cellIndex] = cellState.OriginalValue;
+            _CellStates.Remove(cellIndex);
+        }
+
         private byte GetCellValue(int cellIndex)
         {
             return Buffer[cellIndex];
         }
 
-        [CanBeNull]
-        private HexMetaInfo.BytesMetaInfo GetCellStruct(int cellIndex)
+        private CellState? GetCellState(int cellIndex)
+        {
+            _CellStates.TryGetValue(cellIndex, out var cellState);
+            return cellState;
+        }
+
+        private HexMetaInfo.BytesMetaInfo? GetCellStruct(int cellIndex)
         {
             if (cellIndex == -1)
             {
                 return null;
             }
 
-            var cellStruct = _Structure.MetaInfoList.Find(metaInfo => cellIndex >= metaInfo.Offset && cellIndex <= metaInfo.Offset + metaInfo.Size);
+            var cellStruct = _Patterns.MetaInfoList.Find(pattern =>
+                cellIndex >= pattern.Offset && cellIndex <= pattern.Offset + pattern.Size);
 
             return cellStruct;
         }
@@ -302,19 +643,19 @@ namespace UEExplorer.UI.Forms
         /// </summary>
         public void Reload()
         {
-            _Structure.MetaInfoList.Clear();
+            _Patterns.MetaInfoList.Clear();
             InitializeMetaInfoFields();
         }
 
         private void InitializeMetaInfoFields()
         {
             // Re-load the contents with a recording stream!
-            if (Target is UObject uObject)
+            if (Target is UObject { ExportTable: not null } uObject)
             {
                 uObject.Load<UObjectRecordStream>();
                 if (uObject.ThrownException != null)
                 {
-                    _Structure.MetaInfoList.Add
+                    _Patterns.MetaInfoList.Add
                     (
                         new HexMetaInfo.BytesMetaInfo
                         {
@@ -328,14 +669,14 @@ namespace UEExplorer.UI.Forms
                 }
             }
 
-            if (Target is IBinaryData binaryTarget && binaryTarget.BinaryMetaData != null)
+            if (Target is IBinaryData { BinaryMetaData: not null } binaryTarget)
             {
                 foreach (var binaryField in binaryTarget.BinaryMetaData.Fields)
                 {
                     int colorHash = binaryField.Field.GetHashCode()
                                     ^ (int)binaryField.Size
                                     ^ (binaryField.Value?.GetType().GetHashCode() ?? 1);
-                    _Structure.MetaInfoList.Add
+                    _Patterns.MetaInfoList.Add
                     (
                         new HexMetaInfo.BytesMetaInfo
                         {
@@ -350,16 +691,20 @@ namespace UEExplorer.UI.Forms
                 }
             }
 
-            if (!(Target is UStruct unStruct))
+            if (Target is not UStruct unStruct)
+            {
                 return;
+            }
 
             if (unStruct.ByteCodeManager == null)
+            {
                 return;
+            }
 
             unStruct.ByteCodeManager.Deserialize();
             foreach (var token in unStruct.ByteCodeManager.DeserializedTokens)
             {
-                _Structure.MetaInfoList.Add
+                _Patterns.MetaInfoList.Add
                 (
                     new HexMetaInfo.BytesMetaInfo
                     {
@@ -386,27 +731,27 @@ namespace UEExplorer.UI.Forms
         }
 
         private readonly string _ConfigPath =
-            Path.Combine(Program.s_appDataDir, "DataStructures", "{0}", "{1}") + ".xml";
+            Path.Combine(Application.UserAppDataPath, "DataStructures", "{0}", "{1}") + ".xml";
 
         private string GetConfigPath()
         {
-            var folderName = Path.GetFileNameWithoutExtension(Target.GetBufferId(true));
+            var folderName = Path.GetFileNameWithoutExtension(Target.GetBufferId());
             return string.Format(_ConfigPath, folderName, Target.GetBufferId());
         }
 
         [EditorBrowsable] public Font CellModifiedFont { get; set; }
 
         private readonly Brush _ForeBrush;
-        private readonly SolidBrush _BorderBrush = new SolidBrush(Color.FromArgb(237, 237, 237));
-        private readonly SolidBrush _UnderlineBrush = new SolidBrush(Color.FromArgb(0x55EDEDED));
-        private readonly SolidBrush _EvenBrush = new SolidBrush(Color.FromArgb(80, 80, 80));
-        private readonly SolidBrush _EvenLitBrush = new SolidBrush(Color.FromArgb(112, 32, 32));
-        private readonly SolidBrush _OddBrush = new SolidBrush(Color.FromArgb(150, 150, 150));
-        private readonly SolidBrush _OddLitBrush = new SolidBrush(Color.FromArgb(182, 102, 102));
-        private readonly SolidBrush _OffsetBrush = new SolidBrush(Color.FromArgb(160, 160, 160));
-        private readonly SolidBrush _SelectedBrush = new SolidBrush(Color.FromArgb(unchecked((int)0x880000FF)));
-        private readonly SolidBrush _HoveredBrush = new SolidBrush(Color.FromArgb(unchecked((int)0x880088FF)));
-        private readonly SolidBrush _HoveredFieldBrush = new SolidBrush(Color.FromArgb(unchecked((int)0x88000000)));
+        private readonly SolidBrush _BorderBrush = new(Color.FromArgb(237, 237, 237));
+        private readonly SolidBrush _UnderlineBrush = new(Color.FromArgb(0x55EDEDED));
+        private readonly SolidBrush _EvenBrush = new(Color.FromArgb(80, 80, 80));
+        private readonly SolidBrush _EvenLitBrush = new(Color.FromArgb(112, 32, 32));
+        private readonly SolidBrush _OddBrush = new(Color.FromArgb(150, 150, 150));
+        private readonly SolidBrush _OddLitBrush = new(Color.FromArgb(182, 102, 102));
+        private readonly SolidBrush _OffsetBrush = new(Color.FromArgb(160, 160, 160));
+        private readonly SolidBrush _SelectedBrush = new(Color.FromArgb(unchecked((int)0xFF0000FF)));
+        private readonly SolidBrush _HoveredBrush = new(Color.FromArgb(unchecked((int)0x880088FF)));
+        private readonly SolidBrush _HoveredFieldBrush = new(Color.FromArgb(unchecked((int)0x88000000)));
 
         private SolidBrush _EvenCellBrush;
 
@@ -424,10 +769,15 @@ namespace UEExplorer.UI.Forms
 
         private void HexLinePanel_Paint(object sender, PaintEventArgs e)
         {
-            _AddressSize = e.Graphics.MeasureString(_AddressSample, HexViewPanel.Font,
+            if (HexViewPanel.Focused)
+            {
+                //e.Graphics.DrawRectangle(_BorderPen, e.ClipRectangle);
+            }
+
+            _AddressSize = e.Graphics.MeasureString(_AddressSample, CellFont,
                 new PointF(0, 0), StringFormat.GenericTypographic
             );
-            
+
             float addressColumnOffset = ColumnMargin;
             float addressColumnWidth = _AddressSize.Width;
             float byteColumnOffset = _DrawByte
@@ -439,7 +789,7 @@ namespace UEExplorer.UI.Forms
 
             string text = Resources.HexView_Offset;
 
-            e.Graphics.DrawString(text, HexViewPanel.Font, _ForeBrush,
+            e.Graphics.DrawString(text, CellFont, _ForeBrush,
                 addressColumnOffset,
                 ColumnMargin,
                 StringFormat.GenericDefault
@@ -448,16 +798,13 @@ namespace UEExplorer.UI.Forms
                 addressColumnOffset, ColumnMargin + CellHeight,
                 addressColumnOffset + byteColumnOffset - ColumnMargin, ColumnMargin + CellHeight
             );
-            
-            if (Buffer == null)
-                return;
-            
+
             int offset = CellCount * HexViewScrollBar.Value;
             int lineCount = Math.Min(
                 (int)(HexViewPanel.ClientSize.Height / CellHeight),
                 (Buffer.Length - offset) / CellCount + ((Buffer.Length - offset) % CellCount > 0 ? 1 : 0)
             );
-            
+
             if (_DrawByte)
             {
                 float x = byteColumnOffset;
@@ -475,7 +822,7 @@ namespace UEExplorer.UI.Forms
                         : HoveredOffset % CellCount == i ? _HoveredBrush
                         : i / 4.0F / 1.00 % 2.00 < 1.00 ? _EvenBrush : _OffsetBrush;
                     var c = HexTable[i];
-                    e.Graphics.DrawString(c, HexViewPanel.Font, textBrush,
+                    e.Graphics.DrawString(c, CellFont, textBrush,
                         x + i * CellWidth,
                         y,
                         StringFormat.GenericDefault
@@ -494,12 +841,14 @@ namespace UEExplorer.UI.Forms
                     x + ColumnWidth, y + CellHeight
                 );
 
-                e.Graphics.DrawString("ASCII", HexViewPanel.Font, _OffsetBrush,
+                e.Graphics.DrawString("ASCII", CellFont, _OffsetBrush,
                     x,
                     y,
                     StringFormat.GenericDefault
                 );
             }
+
+            using var hoveredBorderPen = new Pen(_HoveredFieldBrush);
 
             float lineOffsetY = (float)(ColumnMargin + CellHeight + CellHeight * .5);
             float extraLineOffset = CellHeight;
@@ -511,7 +860,8 @@ namespace UEExplorer.UI.Forms
                 }
 
                 var maxCells = Math.Min(Buffer.Length - offset, CellCount);
-                var lineIsSelected = offset <= SelectedOffset && offset + CellCount > SelectedOffset;
+                var lineIsSelected = _Selection.HasValue && _Selection.Value.Start.Value - offset < CellCount &&
+                                     offset <= _Selection.Value.End.Value;
                 var lineIsHovered = offset <= HoveredOffset && offset + CellCount > HoveredOffset;
 
                 if (lineIsSelected)
@@ -537,24 +887,26 @@ namespace UEExplorer.UI.Forms
                 string lineText = $"{offset:X8}".PadLeft(8, '0');
                 var textBrush = line % 2 == 0 ? _EvenBrush : _OddBrush;
                 var lineBrush = lineIsSelected ? _SelectedBrush : lineIsHovered ? _HoveredBrush : textBrush;
-                e.Graphics.DrawString(lineText, HexViewPanel.Font, lineBrush, addressColumnOffset, lineOffsetY);
+                e.Graphics.DrawString(lineText, CellFont, lineBrush, addressColumnOffset, lineOffsetY);
 
-                _EvenCellBrush = new SolidBrush(Color.FromArgb(textBrush.Color.ToArgb() - 0x303030 + 0x500000));
+                using var evenCellBrush =
+                    new SolidBrush(Color.FromArgb(textBrush.Color.ToArgb() - 0x303030 + 0x500000));
                 if (_DrawByte)
                 {
-                    var hoveredMetaItem = _Structure.MetaInfoList.Find(t => t.Tag is UStruct.UByteCodeDecompiler.Token
-                                                                            && t.Offset == HoveredOffset
-                    );
+                    // TODO: Spatial hashing?
+                    var hoveredMetaItem = HoveredOffset != -1
+                        ? _Patterns.MetaInfoList.Find(pattern => pattern.Offset == HoveredOffset && pattern.Tag is UStruct.UByteCodeDecompiler.Token)
+                        : null;
 
-                    var selectedMetaItem = _Structure.MetaInfoList.Find(t => t.Tag is UStruct.UByteCodeDecompiler.Token
-                                                                             && t.Offset == SelectedOffset
-                    );
+                    var selectedMetaItem = SelectedOffset != -1
+                        ? _Patterns.MetaInfoList.Find(pattern => pattern.Offset == SelectedOffset && pattern.Tag is UStruct.UByteCodeDecompiler.Token)
+                        : null;
 
                     for (int cellIndex = 0; cellIndex < maxCells; ++cellIndex)
                     {
                         int byteIndex = offset + cellIndex;
                         var cellTextBrush = cellIndex % 4 == 0
-                            ? _EvenCellBrush
+                            ? evenCellBrush
                             : textBrush;
                         string cellText = HexTable[Buffer[byteIndex]];
 
@@ -563,109 +915,122 @@ namespace UEExplorer.UI.Forms
                         var x1 = byteColumnOffset + cellIndex * CellWidth;
                         var x2 = byteColumnOffset + (cellIndex + 1) * CellWidth;
 
-                        foreach (var s in _Structure.MetaInfoList)
+                        foreach (var pattern in _Patterns.MetaInfoList)
                         {
-                            var drawSize = hoveredMetaItem == s || selectedMetaItem == s
-                                ? s.HoverSize > 0 ? s.HoverSize : s.Size
-                                : s.Size;
-                            if (byteIndex < s.Offset || byteIndex >= s.Offset + drawSize)
+                            var drawSize = hoveredMetaItem == pattern || selectedMetaItem == pattern
+                                ? pattern.HoverSize > 0 ? pattern.HoverSize : pattern.Size
+                                : pattern.Size;
+                            if (byteIndex < pattern.Offset || byteIndex >= pattern.Offset + drawSize)
                                 continue;
 
                             var cellHeight = extraLineOffset;
                             var cellRectangleY = y1;
-                            if (s.Tag is UStruct.UByteCodeDecompiler.Token)
+                            if (pattern is { Size: 1, Tag: UStruct.UByteCodeDecompiler.Token })
                             {
                                 cellHeight *= 0.5F;
                                 cellRectangleY = y1 + (y2 - y1) * 0.5F - cellHeight * 0.5F;
                             }
 
-                            var rectBrush = new SolidBrush(Color.FromArgb(60, s.Color.R, s.Color.G, s.Color.B));
+                            using var rectBrush = new SolidBrush(Color.FromArgb(60, pattern.Color.R, pattern.Color.G, pattern.Color.B));
                             e.Graphics.FillRectangle(rectBrush, x1, cellRectangleY, CellWidth, cellHeight);
-                            if (HoveredOffset >= s.Offset && HoveredOffset < s.Offset + drawSize)
+
+                            if (HoveredOffset == -1 || HoveredOffset < pattern.Offset || HoveredOffset >= pattern.Offset + drawSize)
                             {
-                                var borderPen = new Pen(_HoveredFieldBrush);
-                                e.Graphics.DrawLine(borderPen, x1, y1, x2, y1); // Top	
-                                e.Graphics.DrawLine(borderPen, x1, y2, x2, y2); // Bottom
-
-                                if (byteIndex == s.Offset)
-                                    e.Graphics.DrawLine(borderPen, x1, y1, x1, y2); // Left
-
-                                if (byteIndex == s.Offset + drawSize - 1)
-                                    e.Graphics.DrawLine(borderPen, x2, y1, x2, y2); // Right
+                                continue;
                             }
 
-                            cellTextBrush = new SolidBrush(cellTextBrush.Color.Darken(30F));
+                            e.Graphics.DrawLine(hoveredBorderPen, x1, y1, x2, y1); // Top	
+                            e.Graphics.DrawLine(hoveredBorderPen, x1, y2, x2, y2); // Bottom
+
+                            if (byteIndex == pattern.Offset)
+                                e.Graphics.DrawLine(hoveredBorderPen, x1, y1, x1, y2); // Left
+
+                            if (byteIndex == pattern.Offset + drawSize - 1)
+                                e.Graphics.DrawLine(hoveredBorderPen, x2, y1, x2, y2); // Right
+
                         }
 
-                        var cellFont = HexViewPanel.Font;
-
-                        // Render edit carret.
-                        if (byteIndex == _ActiveOffset)
+                        var cellFont = CellFont;
+                        if (byteIndex != _ActiveOffset)
                         {
-                            e.Graphics.FillRectangle(cellTextBrush,
-                                (int)x1, (int)y1,
-                                (int)CellWidth, (int)CellHeight
-                            );
-                            //if( (DateTime.Now - _CarretStartTime).TotalMilliseconds % 600 < 500 )
-                            //{
-                            var nibbleWidth = (float)(CellWidth * 0.5);
-                            switch (_ActiveNibbleIndex)
-                            {
-                                case 0:
-                                    e.Graphics.DrawLine(new Pen(
-                                            _ActiveNibbleBrush,
-                                            nibbleWidth
-                                        ),
-                                        x1 + nibbleWidth * 0.5F, y1, x1 + nibbleWidth * 0.5F, y2
-                                    );
-                                    break;
-
-                                case 1:
-                                    e.Graphics.DrawLine(new Pen(
-                                            _ActiveNibbleBrush,
-                                            nibbleWidth
-                                        ),
-                                        x1 + nibbleWidth + nibbleWidth * 0.5F, y1,
-                                        x1 + nibbleWidth + nibbleWidth * 0.5F, y2
-                                    );
-                                    break;
-                            }
-
-                            cellTextBrush = _WhiteForeBrush;
-                            //}
-                        }
-                        else
-                        {
-                            if (_CellStates.TryGetValue(byteIndex, out var cellState) && cellState.IsModified)
+                            if (_CellStates.Count > 0 && _CellStates.TryGetValue(byteIndex, out var cellState) && cellState.IsModified)
                             {
                                 cellFont = CellModifiedFont;
                             }
+
+                            e.Graphics.DrawString(cellText, cellFont, cellTextBrush,
+                                new RectangleF(
+                                    byteColumnOffset + cellIndex * CellWidth, lineOffsetY,
+                                    CellWidth, CellHeight
+                                )
+                            );
+                        }
+                        // Render edit caret.
+                        else
+                        {
+                            using var cellTextBrushAlternate = new SolidBrush(Color.FromArgb(
+                                cellTextBrush.Color.A,
+                                (int)(cellTextBrush.Color.R * 0.7f),
+                                (int)(cellTextBrush.Color.G * 0.7f),
+                                (int)(cellTextBrush.Color.B * 0.7f)
+                            ));
+
+                            e.Graphics.FillRectangle(cellTextBrushAlternate,
+                                x1, y1,
+                                CellWidth, CellHeight
+                            );
+
+                            if (_CaretTick)
+                            {
+                                switch (_ActiveNibbleIndex)
+                                {
+                                    case 0:
+                                        e.Graphics.DrawLine(_ActiveNibblePen,
+                                            x1 + NibbleWidth * 0.5F, y1, x1 + NibbleWidth * 0.5F, y2
+                                        );
+                                        break;
+
+                                    case 1:
+                                        e.Graphics.DrawLine(_ActiveNibblePen,
+                                            x1 + NibbleWidth + NibbleWidth * 0.5F, y1,
+                                            x1 + NibbleWidth + NibbleWidth * 0.5F, y2
+                                        );
+                                        break;
+                                }
+                            }
+
+                            e.Graphics.DrawString(cellText, cellFont, _WhiteForeBrush,
+                                new RectangleF(
+                                    byteColumnOffset + cellIndex * CellWidth, lineOffsetY,
+                                    CellWidth, CellHeight
+                                )
+                            );
                         }
 
-                        e.Graphics.DrawString(cellText, cellFont, cellTextBrush,
-                            byteColumnOffset + cellIndex * CellWidth, lineOffsetY
-                        );
-
-                        if (byteIndex == SelectedOffset)
+                        if (Selection.HasValue)
                         {
-                            // Draw the selection.
-                            var drawPen = _SelectionPen;
-                            e.Graphics.DrawRectangle(drawPen,
-                                (int)(byteColumnOffset + cellIndex * CellWidth),
-                                (int)lineOffsetY,
-                                (int)CellWidth,
-                                (int)CellHeight
-                            );
+                            if (byteIndex >= Selection.Value.Start.Value &&
+                                byteIndex <= Selection.Value.End.Value)
+                            {
+                                // Draw the selection.
+                                var drawPen = _SelectionPen;
+                                e.Graphics.DrawRectangle(drawPen,
+                                    byteColumnOffset + cellIndex * CellWidth,
+                                    lineOffsetY,
+                                    CellWidth,
+                                    CellHeight
+                                );
+                            }
                         }
 
                         if (byteIndex == HoveredOffset)
                         {
                             var drawPen = _HoverPen;
                             e.Graphics.DrawRectangle(drawPen,
-                                (int)(byteColumnOffset + cellIndex * CellWidth),
-                                (int)lineOffsetY,
-                                (int)CellWidth,
-                                (int)CellHeight
+                                byteColumnOffset + cellIndex * CellWidth,
+                                lineOffsetY,
+                                CellWidth,
+                                CellHeight
                             );
                         }
                     }
@@ -673,32 +1038,36 @@ namespace UEExplorer.UI.Forms
 
                 if (_DrawASCII)
                 {
-                    float cellWidth = CellWidth;
-                    float cellHeight = CellHeight;
+                    int cellWidth = (int)CellWidth;
+                    int cellHeight = (int)CellHeight;
                     for (int cellIndex = 0; cellIndex < maxCells; ++cellIndex)
                     {
                         int byteIndex = offset + cellIndex;
 
-                        if (byteIndex == SelectedOffset)
+                        if (Selection.HasValue)
                         {
-                            // Draw the selection.
-                            var drawPen = _SelectionPen;
-                            e.Graphics.DrawRectangle(drawPen,
-                                (int)(asciiColumnOffset + cellIndex * cellWidth),
-                                (int)lineOffsetY,
-                                (int)cellWidth,
-                                (int)cellHeight
-                            );
+                            if (byteIndex >= Selection.Value.Start.Value &&
+                                byteIndex <= Selection.Value.End.Value)
+                            {
+                                // Draw the selection.
+                                var drawPen = _SelectionPen;
+                                e.Graphics.DrawRectangle(drawPen,
+                                    asciiColumnOffset + cellIndex * cellWidth,
+                                    lineOffsetY,
+                                    cellWidth,
+                                    cellHeight
+                                );
+                            }
                         }
 
                         if (byteIndex == HoveredOffset)
                         {
                             var drawPen = _HoverPen;
                             e.Graphics.DrawRectangle(drawPen,
-                                (int)(asciiColumnOffset + cellIndex * cellWidth),
-                                (int)lineOffsetY,
-                                (int)cellWidth,
-                                (int)cellHeight
+                                asciiColumnOffset + cellIndex * cellWidth,
+                                lineOffsetY,
+                                cellWidth,
+                                cellHeight
                             );
                         }
 
@@ -708,17 +1077,17 @@ namespace UEExplorer.UI.Forms
                         {
                             case 0x09:
                                 drawnChar = "\\t";
-                                drawBrush = _EvenCellBrush;
+                                drawBrush = evenCellBrush;
                                 break;
 
                             case 0x0A:
                                 drawnChar = "\\n";
-                                drawBrush = _EvenCellBrush;
+                                drawBrush = evenCellBrush;
                                 break;
 
                             case 0x0D:
                                 drawnChar = "\\r";
-                                drawBrush = _EvenCellBrush;
+                                drawBrush = evenCellBrush;
                                 break;
 
                             default:
@@ -728,9 +1097,11 @@ namespace UEExplorer.UI.Forms
                         }
 
                         e.Graphics.DrawString(
-                            drawnChar, HexViewPanel.Font, drawBrush,
-                            asciiColumnOffset + cellIndex * cellWidth,
-                            lineOffsetY
+                            drawnChar, CellFont, drawBrush,
+                            new RectangleF(
+                                asciiColumnOffset + cellIndex * cellWidth, lineOffsetY,
+                                CellWidth, CellHeight
+                            )
                         );
                     }
                 }
@@ -741,7 +1112,7 @@ namespace UEExplorer.UI.Forms
         }
 
         private static readonly string[] HexTable =
-        {
+        [
             "00", "01", "02", "03", "04", "05", "06", "07", "08", "09", "0A", "0B", "0C", "0D", "0E", "0F",
             "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "1A", "1B", "1C", "1D", "1E", "1F",
             "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "2A", "2B", "2C", "2D", "2E", "2F",
@@ -758,7 +1129,7 @@ namespace UEExplorer.UI.Forms
             "D0", "D1", "D2", "D3", "D4", "D5", "D6", "D7", "D8", "D9", "DA", "DB", "DC", "DD", "DE", "DF",
             "E0", "E1", "E2", "E3", "E4", "E5", "E6", "E7", "E8", "E9", "EA", "EB", "EC", "ED", "EE", "EF",
             "F0", "F1", "F2", "F3", "F4", "F5", "F6", "F7", "F8", "F9", "FA", "FB", "FC", "FD", "FE", "FF"
-        };
+        ];
 
         internal static char FilterByte(byte code)
         {
@@ -773,164 +1144,130 @@ namespace UEExplorer.UI.Forms
         private int _ActiveOffset = -1;
 
         private int _ActiveNibbleIndex;
-        private DateTime _CarretStartTime;
-
-        private int _SelectedOffset = -1;
+        private bool _CaretTick;
 
         private int SelectedOffset
         {
-            get => _SelectedOffset;
+            get { return Selection.HasValue ? Selection.Value.Start.Value : -1; }
             set
             {
-                _SelectedOffset = value;
-                OffsetChanged();
+                _DirectionalOffset = value;
+
+                Selection = value == -1
+                    ? null
+                    : new Range(value, value);
             }
         }
 
+        /// <summary>
+        /// Initial selection offset.
+        /// </summary>
+        private int _DirectionalOffset;
+
+        private int SelectionStart => Selection.HasValue ? Selection.Value.Start.Value : -1;
+        private int SelectionEnd => Selection.HasValue ? Selection.Value.End.Value : -1;
+
+        private int SelectionLength
+        {
+            get => Selection.HasValue ? Math.Abs(Selection.Value.End.Value - Selection.Value.Start.Value + 1) : 0;
+        }
+
+        private Range? Selection
+        {
+            get => _Selection;
+            set
+            {
+                if (value == null)
+                {
+                    _DirectionalOffset = -1;
+                }
+
+                _Selection = value;
+                OnOffsetChangedEvent();
+            }
+        }
+
+        private int SelectionLockStart = 0;
+        private int SelectionLockEnd => Buffer.Length - 1;
+
         private int _ContextOffset = -1;
+        private int HoveredOffset { get; set; } = -1;
 
-        [DefaultValue(-1)] private int HoveredOffset { get; set; }
+        public delegate void OffsetChangedEventHandler(int selectionOffset, int selectionLength);
 
-        public delegate void OffsetChangedEventHandler(int selectedOffset);
-
-        public event OffsetChangedEventHandler OffsetChangedEvent = null;
+        public event OffsetChangedEventHandler? OffsetChangedEvent;
 
         private void OnOffsetChangedEvent()
         {
-            if (OffsetChangedEvent != null)
-            {
-                OffsetChangedEvent.Invoke(SelectedOffset);
-            }
+            OffsetChangedEvent?.Invoke(SelectedOffset, SelectionLength);
+            OffsetChanged();
         }
+
+        private int _LastUpdatedPosition;
+        private int _LastUpdatedSize;
 
         private void OffsetChanged()
         {
-            HexViewPanel.Invalidate();
-            if (SelectedOffset == -1)
+            if (_LastUpdatedPosition == SelectedOffset && _LastUpdatedSize == SelectionLength)
+            {
                 return;
-
-            DissambledObject.Text = string.Empty;
-            DissambledName.Text = string.Empty;
-
-            var bufferSelection = new byte[8];
-            for (int i = 0; SelectedOffset + i < Buffer.Length && i < 8; ++i)
-            {
-                bufferSelection[i] = Buffer[SelectedOffset + i];
             }
 
-            DissambledChar.Text = ((char)bufferSelection[0]).ToString(CultureInfo.InvariantCulture);
-            DissambledByte.Text = bufferSelection[0].ToString(CultureInfo.InvariantCulture);
-            DissambledShort.Text = BitConverter.ToInt16(bufferSelection, 0).ToString(CultureInfo.InvariantCulture);
-            DissambledUShort.Text = BitConverter.ToUInt16(bufferSelection, 0).ToString(CultureInfo.InvariantCulture);
-            DissambledInt.Text = BitConverter.ToInt32(bufferSelection, 0).ToString(CultureInfo.InvariantCulture);
-            DissambledUInt.Text = BitConverter.ToUInt32(bufferSelection, 0).ToString(CultureInfo.InvariantCulture);
-            DissambledFloat.Text = BitConverter.ToSingle(bufferSelection, 0).ToString(CultureInfo.InvariantCulture);
-            DissambledLong.Text = BitConverter.ToInt64(bufferSelection, 0).ToString(CultureInfo.InvariantCulture);
-            DissambledULong.Text = BitConverter.ToUInt64(bufferSelection, 0).ToString(CultureInfo.InvariantCulture);
+            _LastUpdatedPosition = SelectedOffset;
+            _LastUpdatedSize = SelectionLength;
 
-            try
+            if (SelectedOffset == -1)
             {
-                var index = UnrealReader.ReadIndexFromBuffer(bufferSelection, Target.GetBuffer());
-                DissambledIndex.Text = index.ToString(CultureInfo.InvariantCulture);
-            }
-            catch
-            {
-                DissambledIndex.Text = Resources.NOT_AVAILABLE;
-            }
-
-            try
-            {
-                var obj = Target.GetBuffer()
-                    .ParseObject(UnrealReader.ReadIndexFromBuffer(bufferSelection, Target.GetBuffer()));
-                DissambledObject.Text = obj == null ? Resources.NOT_AVAILABLE : obj.GetOuterGroup();
-            }
-            catch
-            {
-                DissambledObject.Text = Resources.NOT_AVAILABLE;
-            }
-
-            try
-            {
-                DissambledName.Text = Target.GetBuffer()
-                    .ParseName(UnrealReader.ReadIndexFromBuffer(bufferSelection, Target.GetBuffer()));
-            }
-            catch
-            {
-                DissambledName.Text = Resources.NOT_AVAILABLE;
-            }
-
-            DissambledStruct.Text = string.Empty;
-            foreach (var s in _Structure.MetaInfoList)
-            {
-                if (SelectedOffset >= s.Offset && SelectedOffset < s.Offset + s.Size)
+                foreach (DataGridViewRow row in SelectionDataGridView.Rows)
                 {
-                    DissambledStruct.Text = s.Name;
+                    row.Cells["Value"].Value = null;
+                }
+
+                return;
+            }
+
+            var buffer = Target.GetBuffer();
+            int position = Target.GetBufferPosition() + SelectedOffset;
+
+            foreach (DataGridViewRow row in SelectionDataGridView.Rows)
+            {
+                var valueCell = row.Cells["Value"];
+                if (valueCell.Tag is not IUnrealPatternParser patternMatcher)
+                {
+                    continue;
+                }
+
+                try
+                {
+                    buffer.Seek(position, SeekOrigin.Begin);
+                    object? value = patternMatcher.Parse(buffer, SelectedOffset, SelectionLength);
+                    valueCell.Value = value;
+                }
+                catch
+                {
+                    valueCell.Value = null;
                 }
             }
-
-            OnOffsetChangedEvent();
         }
 
         private void HexScrollBar_Scroll(object sender, ScrollEventArgs e)
         {
-            if (_LastKeyWasLeft)
-            {
-                SelectedOffset = Math.Max(SelectedOffset - 1, 0);
-                e.NewValue = e.OldValue;
-                _LastKeyWasLeft = false;
-            }
-            else if (_LastKeyWasRight)
-            {
-                SelectedOffset = Math.Min(SelectedOffset + 1, Buffer.Length - 1);
-                e.NewValue = e.OldValue;
-                _LastKeyWasRight = false;
-            }
-            else
-            {
-                switch (e.Type)
-                {
-                    case ScrollEventType.SmallDecrement:
-                        SelectedOffset = e.ScrollOrientation == ScrollOrientation.VerticalScroll
-                            ? Math.Max(SelectedOffset - CellCount, 0)
-                            : Math.Max(SelectedOffset - 1, 0);
-                        break;
-
-                    case ScrollEventType.SmallIncrement:
-                        SelectedOffset = e.ScrollOrientation == ScrollOrientation.VerticalScroll
-                            ? Math.Min(SelectedOffset + CellCount, Buffer.Length - 1)
-                            : Math.Min(SelectedOffset + 1, Buffer.Length - 1);
-                        break;
-                }
-            }
-
-            HexViewPanel.Invalidate();
+            UpdateView();
         }
 
         private void HexLinePanel_MouseClick(object sender, MouseEventArgs e)
         {
-            if (Buffer == null)
-            {
-                return;
-            }
 
-            var cellIndex = GetHoveredByte(e);
-            if (cellIndex == SelectedOffset)
-            {
-                return;
-            }
-
-            SelectedOffset = cellIndex;
-            SetActiveCell(-1);
         }
 
         private void HexLinePanel_MouseDoubleClick(object sender, MouseEventArgs e)
         {
-            if (Buffer == null)
+            if (!CanEdit)
             {
                 return;
             }
 
-            var cellIndex = GetHoveredByte(e);
+            int cellIndex = GetCellIndex(e.X, e.Y);
             if (cellIndex == _ActiveOffset)
             {
                 return;
@@ -944,14 +1281,28 @@ namespace UEExplorer.UI.Forms
             _ActiveOffset = index;
             _ActiveNibbleIndex = 0;
 
-            _CarretStartTime = DateTime.Now;
-            HexViewPanel.Invalidate();
+            if (_ActiveOffset != -1)
+            {
+                caretTimer.Stop(); // reset blink
+
+                _CaretTick = true;
+                caretTimer.Enabled = true;
+                caretTimer.Start();
+            }
+            else
+            {
+                _CaretTick = false;
+                caretTimer.Enabled = false;
+                caretTimer.Stop();
+            }
+
+            UpdateView();
         }
 
-        private int GetHoveredByte(MouseEventArgs e)
+        private int GetCellIndex(float x, float y)
         {
-            float x = e.X - HexViewPanel.Location.X;
-            float y = e.Y - HexViewPanel.Location.Y;
+            x -= HexViewPanel.Location.X;
+            y -= HexViewPanel.Location.Y;
 
             int offset = CellCount * HexViewScrollBar.Value;
             int lineCount = Math.Min((int)(HexViewPanel.ClientSize.Height / CellHeight),
@@ -981,10 +1332,11 @@ namespace UEExplorer.UI.Forms
                 {
                     offset += CellCount;
                     lineYOffset += CellHeight;
+
                     continue;
                 }
 
-                var maxCells = Math.Min(Buffer.Length - offset, CellCount);
+                int maxCells = Math.Min(Buffer.Length - offset, CellCount);
 
                 // Check if the bytes field is selected.
                 if (_DrawByte && x >= byteColumnOffset && x < asciiColumnOffset)
@@ -1031,201 +1383,398 @@ namespace UEExplorer.UI.Forms
 
         private void HexLinePanel_MouseMove(object sender, MouseEventArgs e)
         {
-            var lastHoveredOffset = HoveredOffset;
-            HoveredOffset = GetHoveredByte(e);
+            int lastHoveredOffset = HoveredOffset;
+            HoveredOffset = GetCellIndex(e.X, e.Y);
 
-            if (lastHoveredOffset != HoveredOffset)
+            if (lastHoveredOffset == HoveredOffset)
             {
-                HexViewPanel.Invalidate();
-                if (HoveredOffset != -1)
+                return;
+            }
+
+            UpdateView();
+
+            var pattern = HoveredOffset != -1
+                ? _Patterns.MetaInfoList.Find(i => HoveredOffset >= i.Offset && HoveredOffset < i.Offset + i.Size)
+                : null;
+
+            if (pattern == null)
+            {
+                HexToolTip.Hide(this);
+
+                return;
+            }
+
+            string message = pattern.Name;
+            if (pattern.Tag != null)
+            {
+                try
                 {
-                    var dataStruct = _Structure.MetaInfoList.Find(
-                        i => HoveredOffset >= i.Offset && HoveredOffset < i.Offset + i.Size
-                    );
-
-                    if (dataStruct == null)
+                    // Restart token index.
+                    if (pattern is { Size: 1, Tag: UStruct.UByteCodeDecompiler.Token token })
                     {
-                        HexToolTip.Hide(this);
-                        return;
+                        message += "\r\n" +
+                                   $"\r\nOffset: {PropertyDisplay.FormatOffset(token.Position)}:{PropertyDisplay.FormatOffset(token.StoragePosition)}" +
+                                   $"\r\nSize: {PropertyDisplay.FormatOffset(token.Size)}:{PropertyDisplay.FormatOffset(token.StorageSize)}";
+                        token.Decompiler.JumpTo((ushort)token.Position);
                     }
 
-                    var toolTipPoint = PointToClient(MousePosition);
-                    var message = dataStruct.Name;
-                    if (dataStruct.Tag != null)
-                    {
-                        try
-                        {
-                            // Restart token index.
-                            if (dataStruct.Tag is UStruct.UByteCodeDecompiler.Token token)
-                            {
-                                token.Decompiler.JumpTo((ushort)token.Position);
-                            }
-
-                            message += "\r\n\r\n" + dataStruct.Tag.Decompile();
-                        }
-                        catch
-                        {
-                            message += "\r\n\r\n" + Resources.HexView_COULDNT_ACQUIRE_VALUE;
-                        }
-                    }
-
-                    HexToolTip.Show(message, this,
-                        toolTipPoint.X + (int)(Cursor.Size.Width * 0.5f),
-                        toolTipPoint.Y + (int)(Cursor.Size.Height * 0.5f),
-                        4000
-                    );
+                    message += "\r\n\r\n" + pattern.Tag.Decompile();
                 }
-                else
+                catch
                 {
-                    HexToolTip.Hide(this);
+                    message += "\r\n\r\n" + Resources.HexView_COULDNT_ACQUIRE_VALUE;
                 }
             }
+
+            var toolTipPoint = PointToClient(MousePosition);
+            HexToolTip.Show(message, this,
+                toolTipPoint.X + (int)(Cursor.Size.Width * 0.5f),
+                toolTipPoint.Y + (int)(Cursor.Size.Height * 0.5f),
+                4000
+            );
         }
 
         public delegate void BufferModifiedEventHandler();
 
-        public event BufferModifiedEventHandler BufferModifiedEvent = null;
+        public event BufferModifiedEventHandler? BufferModifiedEvent;
 
         private void OnBufferModifiedEvent()
         {
-            if (BufferModifiedEvent != null)
-            {
-                BufferModifiedEvent.Invoke();
-            }
+            BufferModifiedEvent?.Invoke();
         }
 
-        private bool _LastKeyWasLeft, _LastKeyWasRight;
+        public event EventHandler<IBuffered>? TargetChangedEvent;
+
         private SizeF _AddressSize;
+        private Pen _ActiveNibblePen;
+        private Range? _Selection;
+        private HexMessageFilter _HexMessageFilter;
 
         private void HexViewPanel_KeyDown(object sender, KeyEventArgs e)
         {
-            int currentCellIndex = _ActiveOffset;
-            
-            // Can't change selection if we are editing.
-            if (currentCellIndex != -1 && (
-                    e.KeyCode == Keys.Left ||
-                    e.KeyCode == Keys.Right ||
-                    e.KeyCode == Keys.Up ||
-                    e.KeyCode == Keys.Down))
+            if (IsEditing())
             {
-                if (e.KeyCode == Keys.Left)
+                int currentCellIndex = _ActiveOffset;
+
+                if (ModifierKeys == 0)
                 {
-                    _ActiveNibbleIndex = 0;
-                    HexViewPanel.Invalidate();
+                    int hexKeyIndex = HexKeyCodeToIndex(e.KeyCode);
+                    if (hexKeyIndex != -1)
+                    {
+                        byte newByte = GetCellValue(currentCellIndex);
+                        switch (_ActiveNibbleIndex)
+                        {
+                            case 0:
+                                newByte = (byte)((newByte & 0x0F) | (hexKeyIndex << 4));
+                                SetCellValue(currentCellIndex, newByte);
+                                SetActiveCell(currentCellIndex); // to update the caret blink
+                                _ActiveNibbleIndex = 1;
+                                break;
+
+                            case 1:
+                                newByte = (byte)((newByte & 0xF0) | hexKeyIndex);
+                                SetCellValue(currentCellIndex, newByte);
+                                _ActiveNibbleIndex = 0;
+                                // Move the active cell index to the next cell
+                                int nextCellIndex = Math.Min(currentCellIndex + 1, Buffer.Length - 1);
+                                SetActiveCell(nextCellIndex);
+                                break;
+                        }
+
+                        UpdateView();
+                        OnBufferModifiedEvent();
+                    }
+                    else
+                    {
+                        switch (e.KeyCode)
+                        {
+                            case Keys.Left:
+                                _ActiveNibbleIndex = 0;
+                                UpdateView();
+                                break;
+
+                            case Keys.Right:
+                                _ActiveNibbleIndex = 1;
+                                UpdateView();
+                                break;
+                        }
+                    }
                 }
-                else if (e.KeyCode == Keys.Right)
+                else if ((ModifierKeys & Keys.Control) != 0)
                 {
-                    _ActiveNibbleIndex = 1;
-                    HexViewPanel.Invalidate();
+                    if (e.KeyCode == Keys.X)
+                    {
+                        RestoreCellValue(currentCellIndex);
+                    }
                 }
 
                 e.Handled = true;
                 e.SuppressKeyPress = true;
-                return;
             }
-
-            // HACK: To determine the cause of increment and decrement events when scrolling.
-            _LastKeyWasLeft = e.KeyCode == Keys.Left;
-            _LastKeyWasRight = e.KeyCode == Keys.Right;
-            if (_LastKeyWasLeft || _LastKeyWasRight)
+            else if (IsSelecting())
             {
-                return;
-            }
+                switch (e.KeyCode)
+                {
+                    case Keys.Up:
+                        HexViewScrollBar.Value = Math.Max(HexViewScrollBar.Value - 1, HexViewScrollBar.Minimum);
+                        if ((ModifierKeys & Keys.Shift) != 0)
+                        {
+                            ShiftSelection(-CellCount);
+                        }
+                        else
+                        {
+                            SelectedOffset = Math.Max(SelectedOffset - CellCount, 0);
+                        }
 
-            if (e.KeyCode == Keys.Return)
-            {
-                if (currentCellIndex == -1 && SelectedOffset != -1)
-                {
-                    SetActiveCell(_SelectedOffset);
-                }
-                else if (currentCellIndex != -1)
-                {
-                    SelectedOffset = currentCellIndex;
-                    SetActiveCell(-1);
-                }
-
-                e.Handled = true;
-                e.SuppressKeyPress = true;
-            }
-            else
-            {
-                if (currentCellIndex == -1 || e.KeyCode == Keys.Shift)
-                {
-                    return;
-                }
-
-                var hexKeyIndex = HexKeyCodeToIndex(e.KeyCode);
-                if (hexKeyIndex == -1)
-                {
-                    e.Handled = true;
-                    e.SuppressKeyPress = true;
-                    return;
-                }
-
-                _CarretStartTime = DateTime.Now;
-                byte newByte = Buffer[currentCellIndex];
-                switch (_ActiveNibbleIndex)
-                {
-                    case 0:
-                        newByte = (byte)((byte)(newByte & 0x0F) | (hexKeyIndex << 4));
-                        SetCellValue(currentCellIndex, newByte);
-                        _ActiveNibbleIndex = 1;
                         break;
 
-                    case 1:
-                        newByte = (byte)((byte)(newByte & 0xF0) | hexKeyIndex);
-                        Buffer[currentCellIndex] = newByte;
-                        SetCellValue(currentCellIndex, newByte);
-                        _ActiveNibbleIndex = 0;
-                        // Move the active cell index to the next cell
-                        currentCellIndex = Math.Min(currentCellIndex + 1, Buffer.Length - 1);
-                        SelectedOffset = currentCellIndex;
+                    case Keys.Down:
+                        HexViewScrollBar.Value = Math.Min(HexViewScrollBar.Value + 1, HexViewScrollBar.Maximum);
+                        if ((ModifierKeys & Keys.Shift) != 0)
+                        {
+                            ShiftSelection(CellCount);
+                        }
+                        else
+                        {
+                            SelectedOffset = Math.Min(SelectedOffset + CellCount, SelectionLockEnd);
+                        }
+
+                        break;
+
+                    case Keys.Left:
+                        if ((ModifierKeys & Keys.Shift) != 0)
+                        {
+                            ShiftSelection(-1);
+                        }
+                        else
+                        {
+                            SelectedOffset = Math.Max(SelectedOffset - 1, 0);
+                        }
+
+                        break;
+
+                    case Keys.Right:
+                        if ((ModifierKeys & Keys.Shift) != 0)
+                        {
+                            ShiftSelection(1);
+                        }
+                        else
+                        {
+                            SelectedOffset = Math.Min(SelectedOffset + 1, SelectionLockEnd);
+                        }
+
                         break;
                 }
 
-                HexViewPanel.Invalidate();
-                OnBufferModifiedEvent();
-
-                e.Handled = true;
                 e.SuppressKeyPress = true;
+                e.Handled = true;
+
+                UpdateView();
+            }
+
+            return;
+
+            void ShiftSelection(int count)
+            {
+                int selectionLockStart = SelectionLockStart;
+                int selectionLockEnd = SelectionLockEnd;
+
+                if (_DirectionalOffset == SelectionStart) // re-size backward
+                {
+                    int selectionStart = Math.Max(Math.Min(SelectionStart + count, selectionLockEnd),
+                        selectionLockStart);
+                    int selectionEnd;
+                    if (selectionStart <= SelectionEnd)
+                    {
+                        selectionEnd = SelectionEnd;
+                        _DirectionalOffset = selectionStart;
+                    }
+                    else
+                    {
+                        // Swap
+                        selectionEnd = selectionStart;
+                        selectionStart = SelectionEnd;
+                        _DirectionalOffset = selectionEnd;
+                    }
+
+                    Selection = new Range(selectionStart, selectionEnd);
+                }
+                else if (_DirectionalOffset == SelectionEnd) // re-size forward
+                {
+                    int selectionStart = SelectionStart;
+                    int selectionEnd = Math.Max(Math.Min(SelectionEnd + count, selectionLockEnd), selectionLockStart);
+                    if (selectionStart > selectionEnd) // front -16 re-size?
+                    {
+                        selectionStart = selectionEnd;
+                        selectionEnd = SelectionEnd;
+                        _DirectionalOffset = selectionStart;
+                    }
+                    else
+                    {
+                        _DirectionalOffset = selectionEnd;
+                    }
+
+                    Selection = new Range(selectionStart, selectionEnd);
+                }
+                else
+                {
+                    throw new ArgumentOutOfRangeException();
+                }
             }
         }
-        
-        private void HexViewPanel_KeyPress(object sender, KeyPressEventArgs e)
-        {
 
-        }
-        
         private void HexViewPanel_KeyUp(object sender, KeyEventArgs e)
         {
-            int currentCellIndex = SelectedOffset;
-            if (currentCellIndex == -1)
+            if (!IsSelecting())
             {
                 return;
             }
 
             // TODO: Migrate to MainMenu->Edit dropdown
-            if (e.Control && e.KeyCode == Keys.C)
+            if (e.Control)
             {
-                if (e.Shift)
+                if (e.KeyCode == Keys.C)
                 {
-                    int value = currentCellIndex;
-                    string text = "0x" + value.ToString("X8", CultureInfo.InvariantCulture);
-                    Clipboard.SetText(text);
+                    int currentCellIndex = SelectedOffset;
+
+                    if (e.Shift) // Copy position address
+                    {
+                        int value = currentCellIndex;
+                        string text = "0x" + value.ToString("X8", CultureInfo.InvariantCulture);
+                        Clipboard.SetText(text);
+                    }
+                    else // Copy bytes at selection
+                    {
+                        copyToolStripMenuItem_Click(this, EventArgs.Empty);
+                    }
 
                     e.Handled = true;
                     e.SuppressKeyPress = true;
                 }
-                else
+                else if (e.KeyCode == Keys.X && CanEdit) // Restore bytes at the selection
                 {
-                    byte value = GetCellValue(currentCellIndex);
-                    string text = "0x" + value.ToString("X2", CultureInfo.InvariantCulture);
-                    Clipboard.SetText(text);
-                    
+                    clearToolStripMenuItem_Click(this, EventArgs.Empty);
+
+                    e.Handled = true;
+                    e.SuppressKeyPress = true;
+                }
+                else if (e.KeyCode == Keys.V && CanEdit) // Paste bytes at selection
+                {
+                    if (!Clipboard.ContainsText())
+                    {
+                        return;
+                    }
+
+                    pasteToolStripMenuItem_Click(this, EventArgs.Empty);
+
                     e.Handled = true;
                     e.SuppressKeyPress = true;
                 }
             }
+            else if (e.Alt)
+            {
+                if (e.KeyCode == Keys.C) // Copy ASCII at selection
+                {
+                    CopyASCIIAtSelection();
+
+                    e.Handled = true;
+                    e.SuppressKeyPress = true;
+                }
+            }
+            else if (e.KeyCode == Keys.Return && CanEdit) // Start editing or move the caret.
+            {
+                if (IsEditing())
+                {
+                    SelectedOffset = Math.Min(_ActiveOffset + 1, Buffer.Length - 1);
+                    SetActiveCell(-1);
+                }
+                else
+                {
+                    SetActiveCell(SelectedOffset);
+                }
+            }
+            else if (e.KeyCode == Keys.Escape) // Stop editing
+            {
+                if (IsEditing() && CanEdit)
+                {
+                    SetActiveCell(-1);
+                }
+                else if (IsSelecting()) // Clear selection.
+                {
+                    SelectedOffset = -1;
+                    UpdateView();
+                }
+            }
+            else if (IsEditing())
+            {
+                e.Handled = true;
+                e.SuppressKeyPress = true;
+            }
+        }
+
+        private Span<byte> GetBytesAtSelection()
+        {
+            return Buffer.AsSpan()[_Selection!.Value.Start..(_Selection.Value.End.Value + 1)];
+        }
+
+        private void CopyASCIIAtSelection()
+        {
+            var selectedBytes = GetBytesAtSelection();
+            string text = string
+                .Join(" ", selectedBytes
+                    .ToArray()
+                    .Where(b => b is >= 0x20 and <= 0x7E)
+                    .Select(b => FilterByte(b).ToString(CultureInfo.InvariantCulture)));
+            Clipboard.SetText(text);
+        }
+
+        private void CopyBytesAtSelection()
+        {
+            var selectedBytes = GetBytesAtSelection();
+            string text = string
+                .Join(" ", selectedBytes
+                    .ToArray()
+                    .Select(b => b.ToString("X2", CultureInfo.InvariantCulture)));
+            Clipboard.SetText(text);
+        }
+
+        private void PasteBytesAtSelection(byte[] bytes)
+        {
+            Debug.Assert(_Selection != null, nameof(_Selection) + " != null");
+
+            int editIndex = SelectionStart;
+            if (SelectionLength > 1)
+            {
+                for (int i = 0; i < bytes.Length && editIndex + i < SelectionEnd; ++i)
+                {
+                    SetCellValue(editIndex + i, bytes[i]);
+                }
+            }
+            else
+            {
+                for (int i = 0; i < Math.Min(bytes.Length, SelectionLockEnd); ++i)
+                {
+                    SetCellValue(editIndex + i, bytes[i]);
+                }
+            }
+
+            UpdateView();
+            OnBufferModifiedEvent();
+        }
+
+        private void ClearBytesAtSelection()
+        {
+            Debug.Assert(_Selection != null, nameof(_Selection) + " != null");
+
+            int editIndex = SelectionStart;
+            int selectionLength = SelectionLength;
+            for (int i = 0; i < selectionLength; ++i)
+            {
+                RestoreCellValue(editIndex + i);
+            }
+
+            UpdateView();
+            OnBufferModifiedEvent();
         }
 
         [DllImport("user32")]
@@ -1283,11 +1832,7 @@ namespace UEExplorer.UI.Forms
                     {
                         HexViewScrollBar.Focus();
                         SendMessage(HexViewScrollBar.Handle, 0x20a, m.WParam, m.LParam);
-                        //int value = _HexViewScrollBar.Value;
-                        //_HexViewScrollBar.Value = Math.Min(value + 1, _HexViewScrollBar.Maximum);
-                        //HexScrollBar_Scroll(this,
-                        //    new ScrollEventArgs(ScrollEventType.SmallIncrement, value,
-                        //        _HexViewScrollBar.Value));
+
                         break;
                     }
             }
@@ -1295,21 +1840,34 @@ namespace UEExplorer.UI.Forms
 
         private void Context_Structure_Opening(object sender, CancelEventArgs e)
         {
-            _ContextOffset = HoveredOffset != -1
-                ? HoveredOffset
-                : SelectedOffset != -1
-                    ? SelectedOffset
-                    : -1;
-            
+            if (HoveredOffset == -1 && SelectionLength >= 1)
+            {
+                _ContextOffset = SelectedOffset;
+            }
+            else if (HoveredOffset != -1 && SelectionLength >= 1)
+            {
+                if (HoveredOffset >= SelectionStart &&
+                    HoveredOffset <= SelectionEnd)
+                {
+                    _ContextOffset = HoveredOffset;
+                }
+                else
+                {
+                    SelectedOffset = HoveredOffset;
+                    UpdateView();
+
+                    _ContextOffset = SelectedOffset;
+                }
+            }
+            else
+            {
+                _ContextOffset = -1;
+            }
+
             e.Cancel = _ContextOffset == -1;
             if (e.Cancel)
             {
                 return;
-            }
-
-            if (HoveredOffset != -1)
-            {
-                SelectedOffset = HoveredOffset;
             }
 
             foreach (ToolStripItem item in Context_Structure.Items)
@@ -1318,7 +1876,7 @@ namespace UEExplorer.UI.Forms
                 switch (item.Tag)
                 {
                     case "Cell":
-                        isVisible = _ContextOffset != -1;
+                        isVisible = _ContextOffset != -1 && SelectionLength == 1;
                         break;
 
                     case "Struct":
@@ -1334,10 +1892,49 @@ namespace UEExplorer.UI.Forms
             }
 
             // FIXME: temp
-            editStructValueToolStripMenuItem.Visible = GetCellStruct(_ContextOffset)?.Tag is BinaryMetaData.BinaryField binaryField
-                                                       && (binaryField.Value is UObject || binaryField.Value is UName);
+            clearToolStripMenuItem.Visible = CanEdit;
+            copyToolStripMenuItem.Visible = true;
+            pasteToolStripMenuItem.Visible = CanEdit;
+            pasteToolStripMenuItem.Enabled = Clipboard.ContainsText();
+            editCellToolStripMenuItem.Visible = CanEdit && SelectionLength == 1;
+            editStructValueToolStripMenuItem.Visible = CanEdit &&
+                                                       GetCellStruct(_ContextOffset)?.Tag is BinaryMetaData.BinaryField
+                                                       {
+                                                           Value: UObject or UName
+                                                       };
 
             defineStructToolStripMenuItem.Visible = GetCellStruct(_ContextOffset) == null;
+        }
+
+        private void clearToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            CopyBytesAtSelection();
+            ClearBytesAtSelection();
+        }
+
+        private void pasteToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            string text = Clipboard.GetText();
+            // Starts with a hex value?
+            if (text.Length < 2 || !int.TryParse(
+                    text[..2],
+                    NumberStyles.HexNumber,
+                    CultureInfo.InvariantCulture, out int _))
+            {
+                return;
+            }
+
+            byte[] bytes = text
+                .Split([' '], StringSplitOptions.RemoveEmptyEntries)
+                .Select(b => Convert.ToByte(b, 16))
+                .ToArray();
+
+            PasteBytesAtSelection(bytes);
+        }
+
+        private void copyToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            CopyBytesAtSelection();
         }
 
         private void editCellToolStripMenuItem_Click(object sender, EventArgs e)
@@ -1360,47 +1957,91 @@ namespace UEExplorer.UI.Forms
                     switch (binaryField.Value)
                     {
                         case UName uName:
-                        {
-                            var inputDialog = new NameReferenceInputDialog
                             {
-                                Linker = linker, DefaultNameReference = uName
-                            };
-                            if (inputDialog.ShowDialog(this) == DialogResult.OK)
-                            {
-                                int numberValue = inputDialog.InputNameNumber;
-                                var newValue = new UName(inputDialog.InputNameItem, numberValue - 1);
-                                int index = (int)newValue;
-
-                                var archive = linker.GetBuffer();
-                                Contract.Assert(archive != null);
-
-                                // HACK: workaround IUnrealStream limitations for now.
-                                // This approach will likely fail for some games that have a different FName structure.
-                                if (archive.Version >= (uint)PackageObjectLegacyVersion.NumberAddedToName)
+                                var inputDialog = new NameReferenceInputDialog
                                 {
-                                    const int indexMaxSize = 8;
-                                    // Let's use the UnrealWriter so that we can conform to the varying formats.
-                                    using (var uStream = new UnrealWriter(archive, new MemoryStream(indexMaxSize)))
+                                    Linker = linker,
+                                    DefaultNameReference = uName
+                                };
+                                if (inputDialog.ShowDialog(this) == DialogResult.OK)
+                                {
+                                    int numberValue = inputDialog.InputNameNumber;
+                                    var newValue = new UName(inputDialog.InputNameItem, numberValue - 1);
+                                    int index = (int)newValue;
+
+                                    var archive = linker.GetBuffer();
+                                    Contract.Assert(archive != null);
+
+                                    // HACK: workaround IUnrealStream limitations for now.
+                                    // This approach will likely fail for some games that have a different FName structure.
+                                    if (archive.Version >= (uint)PackageObjectLegacyVersion.NumberAddedToName)
                                     {
-                                        uStream.WriteIndex(index);
-                                        uStream.Write(numberValue);
-                                        byte[] buffer = new byte[indexMaxSize];
-                                        uStream.Seek(0, SeekOrigin.Begin);
-                                        int read = uStream.BaseStream.Read(buffer, 0, buffer.Length);
-                                        Contract.Assert(read == buffer.Length);
+                                        const int indexMaxSize = 8;
+                                        // Let's use the UnrealWriter so that we can conform to the varying formats.
+                                        using (var uStream = new UnrealWriter(archive, new MemoryStream(indexMaxSize)))
+                                        {
+                                            uStream.WriteIndex(index);
+                                            uStream.Write(numberValue);
+                                            byte[] buffer = new byte[indexMaxSize];
+                                            uStream.Seek(0, SeekOrigin.Begin);
+                                            int read = uStream.BaseStream.Read(buffer, 0, buffer.Length);
+                                            Contract.Assert(read == buffer.Length);
 
-                                        Contract.Assert(buffer.Length == cellStruct.Size,
-                                            "Struct size must remain the same.");
-                                        SetCellStructValue(cellStruct.Offset, buffer);
+                                            Contract.Assert(buffer.Length == cellStruct.Size,
+                                                "Struct size must remain the same.");
+                                            SetCellStructValue(cellStruct.Offset, buffer);
+                                        }
                                     }
+                                    else
+                                    {
+                                        const int indexMaxSize = 5;
+                                        // Let's use the UnrealWriter so that we can conform to the varying formats.
+                                        using (var uStream = new UnrealWriter(archive, new MemoryStream(indexMaxSize)))
+                                        {
+                                            uStream.WriteIndex(index);
+                                            // dynamically sized to however many bytes were written for the index.
+                                            byte[] buffer = new byte[uStream.BaseStream.Position];
+                                            uStream.Seek(0, SeekOrigin.Begin);
+                                            int read = uStream.BaseStream.Read(buffer, 0, buffer.Length);
+                                            Contract.Assert(read == buffer.Length);
+
+                                            Contract.Assert(buffer.Length == cellStruct.Size,
+                                                "Struct size must remain the same.");
+                                            SetCellStructValue(cellStruct.Offset, buffer);
+                                        }
+                                    }
+
+                                    cellStruct.Tag = binaryField with { Value = newValue };
                                 }
-                                else
+
+                                break;
+                            }
+
+                        case UObject uObject:
+                            {
+                                var inputDialog = new ObjectReferenceInputDialog
                                 {
+                                    Linker = linker,
+                                    DefaultObjectReference = uObject
+                                };
+                                if (inputDialog.ShowDialog(this) == DialogResult.OK)
+                                {
+                                    var newValue = inputDialog.InputObjectReference;
+                                    int objectIndex = inputDialog.InputObjectReference is { } input
+                                        ? (int)input
+                                        : 0;
+
+                                    var archive = uObject.Package.GetBuffer();
+                                    Contract.Assert(archive != null);
+
                                     const int indexMaxSize = 5;
                                     // Let's use the UnrealWriter so that we can conform to the varying formats.
                                     using (var uStream = new UnrealWriter(archive, new MemoryStream(indexMaxSize)))
                                     {
-                                        uStream.WriteIndex(index);
+                                        // Only valid for UE3's default format
+                                        //byte[] buffer = BitConverter.GetBytes(objectIndex);
+
+                                        uStream.WriteIndex(objectIndex);
                                         // dynamically sized to however many bytes were written for the index.
                                         byte[] buffer = new byte[uStream.BaseStream.Position];
                                         uStream.Seek(0, SeekOrigin.Begin);
@@ -1411,71 +2052,17 @@ namespace UEExplorer.UI.Forms
                                             "Struct size must remain the same.");
                                         SetCellStructValue(cellStruct.Offset, buffer);
                                     }
+
+                                    cellStruct.Tag = binaryField with { Value = newValue };
                                 }
 
-                                cellStruct.Tag = new BinaryMetaData.BinaryField
-                                {
-                                    Value = newValue,
-                                    Field = binaryField.Field,
-                                    Offset = binaryField.Offset,
-                                    Size = binaryField.Size
-                                };
+                                break;
                             }
 
-                            break;
-                        }
-
-                        case UObject uObject:
-                        {
-                            var inputDialog = new ObjectReferenceInputDialog
-                            {
-                                Linker = linker, DefaultObjectReference = uObject
-                            };
-                            if (inputDialog.ShowDialog(this) == DialogResult.OK)
-                            {
-                                var newValue = inputDialog.InputObjectReference;
-                                int objectIndex = inputDialog.InputObjectReference is UObject input
-                                    ? (int)input
-                                    : 0;
-
-                                var archive = uObject.Package.GetBuffer();
-                                Contract.Assert(archive != null);
-
-                                const int indexMaxSize = 5;
-                                // Let's use the UnrealWriter so that we can conform to the varying formats.
-                                using (var uStream = new UnrealWriter(archive, new MemoryStream(indexMaxSize)))
-                                {
-                                    // Only valid for UE3's default format
-                                    //byte[] buffer = BitConverter.GetBytes(objectIndex);
-
-                                    uStream.WriteIndex(objectIndex);
-                                    // dynamically sized to however many bytes were written for the index.
-                                    byte[] buffer = new byte[uStream.BaseStream.Position];
-                                    uStream.Seek(0, SeekOrigin.Begin);
-                                    int read = uStream.BaseStream.Read(buffer, 0, buffer.Length);
-                                    Contract.Assert(read == buffer.Length);
-
-                                    Contract.Assert(buffer.Length == cellStruct.Size,
-                                        "Struct size must remain the same.");
-                                    SetCellStructValue(cellStruct.Offset, buffer);
-                                }
-
-                                cellStruct.Tag = new BinaryMetaData.BinaryField
-                                {
-                                    Value = newValue,
-                                    Field = binaryField.Field,
-                                    Offset = binaryField.Offset,
-                                    Size = binaryField.Size
-                                };
-                            }
-
-                            break;
-                        }
-                        
                         default:
                             throw new NotSupportedException("Field tag is not supported.");
                     }
-                    
+
                     break;
 
                 default:
@@ -1486,7 +2073,7 @@ namespace UEExplorer.UI.Forms
         private void hexValueToolStripMenuItem_Click(object sender, EventArgs e)
         {
             Contract.Assert(_ContextOffset != -1);
-            
+
             byte value = GetCellValue(_ContextOffset);
             string text = "0x" + value.ToString("X2", CultureInfo.InvariantCulture);
             Clipboard.SetText(text);
@@ -1513,6 +2100,7 @@ namespace UEExplorer.UI.Forms
         private void decimalOffsetToolStripMenuItem_Click(object sender, EventArgs e)
         {
             Contract.Assert(_ContextOffset != -1);
+
             int value = _ContextOffset;
             string text = value.ToString("D", CultureInfo.InvariantCulture);
             Clipboard.SetText(text);
@@ -1522,7 +2110,7 @@ namespace UEExplorer.UI.Forms
         {
             var cellStruct = GetCellStruct(_ContextOffset);
             Contract.Assert(cellStruct != null);
-            
+
             string text = cellStruct.Name;
             Clipboard.SetText(text);
         }
@@ -1544,16 +2132,17 @@ namespace UEExplorer.UI.Forms
                     token.Decompiler.JumpTo((ushort)token.Position);
                     text = cellStruct.Tag.Decompile();
                     break;
-                
+
                 case BinaryMetaData.BinaryField binaryField:
                     // Copy the raw tag
-                    text = binaryField.Value.ToString();
+                    text = binaryField.Value?.ToString() ?? string.Empty;
                     break;
-                
+
                 default:
                     text = cellStruct.Tag.Decompile();
                     break;
             }
+
             Clipboard.SetText(text);
         }
 
@@ -1579,58 +2168,221 @@ namespace UEExplorer.UI.Forms
 
         private void defineStructToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            using (var dialog = new StructureInputDialog())
+            using var dialog = new StructureInputDialog();
+
+            if (dialog.ShowDialog() != DialogResult.OK)
             {
-                if (dialog.ShowDialog() != DialogResult.OK)
-                {
-                    return;
-                }
-                
-                string type = dialog.InputStructType;
-                if (type == string.Empty)
-                {
-                    MessageBox.Show(this, "Missing type");
-                    return;
-                }
-                
-                string name = dialog.InputStructName;
-                if (name == string.Empty)
-                {
-                    MessageBox.Show(this, "Missing name");
-                    return;
-                }
-                
-                InitStructure(type, out byte size, out var color);
-                _Structure.MetaInfoList.Add
-                (
-                    new HexMetaInfo.BytesMetaInfo
-                    {
-                        Name = name,
-                        Offset = SelectedOffset,
-                        Size = size,
-                        Type = type,
-                        Color = color
-                    }
-                );
-
-                string path = GetConfigPath();
-                SaveConfig(path);
-
-                HexViewPanel.Invalidate();
+                return;
             }
+
+            string? type = dialog.InputStructType;
+            if (string.IsNullOrEmpty(type))
+            {
+                MessageBox.Show(this, "Missing type");
+                return;
+            }
+
+            string? name = dialog.InputStructName;
+            if (string.IsNullOrEmpty(name))
+            {
+                MessageBox.Show(this, "Missing name");
+                return;
+            }
+
+            InitStructure(type, out byte size, out var color);
+            _Patterns.MetaInfoList.Add
+            (
+                new HexMetaInfo.BytesMetaInfo
+                {
+                    Name = name,
+                    Offset = SelectedOffset,
+                    Size = size,
+                    Type = type,
+                    Color = color
+                }
+            );
+
+            string path = GetConfigPath();
+            SaveConfig(path);
+
+            UpdateView();
         }
 
         private void removeStructToolStripMenuItem_Click(object sender, EventArgs e)
         {
             var cellStruct = GetCellStruct(_ContextOffset);
             Contract.Assert(cellStruct != null);
-            
-            _Structure.MetaInfoList.Remove(cellStruct);
+
+            _Patterns.MetaInfoList.Remove(cellStruct);
 
             string path = GetConfigPath();
             SaveConfig(path);
 
-            HexViewPanel.Invalidate();
+            UpdateView();
+        }
+
+        private bool IsEditing()
+        {
+            return _ActiveOffset != -1;
+        }
+
+        private bool IsSelecting()
+        {
+            return Selection.HasValue;
+        }
+
+        private void HexViewPanel_Click(object sender, EventArgs e)
+        {
+            HexViewPanel.Focus();
+        }
+
+        private void OnHexViewScrollBarOnPreviewKeyDown(object? s, PreviewKeyDownEventArgs e)
+        {
+            if (IsSelecting())
+            {
+                Focus();
+            }
+        }
+
+        private void caretTimer_Tick(object sender, EventArgs e)
+        {
+            if (!IsEditing())
+            {
+                return;
+            }
+
+            _CaretTick = !_CaretTick;
+            UpdateView();
+        }
+
+        private void SelectionDataGridView_RowEnter(object sender, DataGridViewCellEventArgs e)
+        {
+            if (e.RowIndex == -1)
+            {
+                return;
+            }
+
+            if (!IsSelecting())
+            {
+                return;
+            }
+
+            var stream = Target.GetBuffer();
+            if (SelectionDataGridView.Rows[e.RowIndex].Cells["Value"].Tag is not IUnrealPatternParser patternMatcher)
+            {
+                Selection = new Range(SelectedOffset, SelectedOffset);
+                UpdateView();
+
+                return;
+            }
+
+            try
+            {
+                int index = Target.GetBufferPosition() + SelectedOffset;
+                stream.Seek(index, SeekOrigin.Begin);
+                object? value = patternMatcher.Parse(stream, index, 16);
+                if (value == null)
+                {
+                    return;
+                }
+
+                int newSelectionEnd = (int)stream.Position - Target.GetBufferPosition() - 1;
+                Selection = new Range(SelectedOffset, newSelectionEnd);
+                UpdateView();
+            }
+            catch
+            {
+                // ignored
+            }
+        }
+    }
+
+    public interface IUnrealPatternParser
+    {
+        public object? Parse(IUnrealStream stream, int index, int length);
+    }
+
+    internal sealed class UnrealPrimitiveParser<T>(T value) : IUnrealPatternParser where T : unmanaged
+    {
+        public object? Parse(IUnrealStream stream, int index, int length)
+        {
+            if (length > 1 && length < Unsafe.SizeOf<T>())
+            {
+                return null;
+            }
+
+            return value switch
+            {
+                char => length == 1
+                    ? ((char)stream.ReadByte()).ToString(CultureInfo.InvariantCulture)
+                    : ((char)stream.ReadUInt16()).ToString(CultureInfo.InvariantCulture),
+                byte => stream.ReadByte().ToString(CultureInfo.InvariantCulture),
+                short => stream.ReadInt16().ToString(CultureInfo.InvariantCulture),
+                ushort => stream.ReadUInt16().ToString(CultureInfo.InvariantCulture),
+                int => stream.ReadInt32().ToString(CultureInfo.InvariantCulture),
+                uint => stream.ReadUInt32().ToString(CultureInfo.InvariantCulture),
+                long => stream.ReadInt64().ToString(CultureInfo.InvariantCulture),
+                ulong => stream.ReadUInt64().ToString(CultureInfo.InvariantCulture),
+                float => stream.ReadFloat().ToString(CultureInfo.InvariantCulture),
+                _ => throw new ArgumentOutOfRangeException(nameof(value), value, null)
+            };
+        }
+    }
+
+    internal sealed class UnrealIndexParser : IUnrealPatternParser
+    {
+        public object Parse(IUnrealStream stream, int index, int length)
+        {
+            return stream.ReadIndex();
+        }
+    }
+
+    internal sealed class UnrealNameParser : IUnrealPatternParser
+    {
+        public object Parse(IUnrealStream stream, int index, int length)
+        {
+            return stream.ReadName();
+        }
+    }
+
+    internal sealed class UnrealObjectParser : IUnrealPatternParser
+    {
+        public object? Parse(IUnrealStream stream, int index, int length)
+        {
+            return stream.ReadObject();
+        }
+    }
+
+    internal sealed class HexPatternParser(HexViewerControl hexViewControl) : IUnrealPatternParser
+    {
+        public object? Parse(IUnrealStream stream, int index, int length)
+        {
+            foreach (var patternRegion in hexViewControl
+                         .PatternRegions
+                         .Where(pattern => index >= pattern.Offset && index < pattern.Offset + pattern.Size))
+            {
+                if (patternRegion.Tag is UStruct.UByteCodeDecompiler.Token token)
+                {
+                    token.Decompiler.JumpTo((ushort)token.Position);
+                }
+
+                object? value;
+
+                try
+                {
+                    value = patternRegion.Tag?.Decompile();
+                }
+                catch (Exception)
+                {
+                    value = null;
+                }
+
+                stream.Position += patternRegion.Size;
+
+                return value;
+            }
+
+            return null;
         }
     }
 }

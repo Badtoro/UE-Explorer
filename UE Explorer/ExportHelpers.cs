@@ -54,7 +54,7 @@ namespace UEExplorer
 
             using (var ntlFileStream =
                    File.Open(Path.Combine(Application.StartupPath, "Native Tables", Program.Options.NTLPath + NativesTablePackage.Extension),
-                       FileMode.Open))
+                       FileMode.Open, FileAccess.Read))
             {
                 package.NTLPackage = new NativesTablePackage();
                 package.NTLPackage.Deserialize(ntlFileStream);
@@ -71,7 +71,7 @@ namespace UEExplorer
                     File.WriteAllText(
                         Path.Combine( exportPath, uClass.Name ) + UnrealExtensions.UnrealCodeExt,
                         exportContent,
-                        Encoding.ASCII
+                        UnrealEncoding.ANSI
                     );
                 }
                 catch( Exception e )
