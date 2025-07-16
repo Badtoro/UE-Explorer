@@ -74,6 +74,8 @@ namespace UEExplorer.UI.Forms
         private float ColumnWidth { get; set; }
         private const float ColumnMargin = 8;
 
+        private float NibbleWidth { get; set; }
+
         private bool _DrawASCII = true;
 
         public bool DrawASCII
@@ -118,11 +120,7 @@ namespace UEExplorer.UI.Forms
             _LineHoverPen = _HoverPen;
             _ForeBrush = new SolidBrush(Color.Black);
             _WhiteForeBrush = new SolidBrush(Color.White);
-            _ActiveNibbleBrush = new SolidBrush(Color.FromArgb(unchecked((int)0xEE000000)));
-            _ActiveNibblePen = new Pen(
-                _ActiveNibbleBrush,
-                NibbleWidth
-            );
+            _ActiveNibbleBrush = new SolidBrush(Color.FromArgb(unchecked((int)0xFF228282)));
 
             _AddressSample = $"{99999999:x8}".PadLeft(8, '0').ToUpper();
             _MuteBrush = _EvenBrush;
@@ -253,6 +251,14 @@ namespace UEExplorer.UI.Forms
             CellWidth = CellFont.Height + CellPadding;
             CellHeight = CellFont.Height;
             ColumnWidth = CellCount * CellWidth;
+
+            NibbleWidth = CellWidth * 0.5f;
+
+            _ActiveNibblePen?.Dispose();
+            _ActiveNibblePen = new Pen(
+                _ActiveNibbleBrush,
+                NibbleWidth
+            );
         }
 
         private IDisposable _MouseInputSubscription;
@@ -1277,6 +1283,8 @@ namespace UEExplorer.UI.Forms
 
             if (_ActiveOffset != -1)
             {
+                caretTimer.Stop(); // reset blink
+
                 _CaretTick = true;
                 caretTimer.Enabled = true;
                 caretTimer.Start();
@@ -1438,11 +1446,9 @@ namespace UEExplorer.UI.Forms
         public event EventHandler<IBuffered>? TargetChangedEvent;
 
         private SizeF _AddressSize;
-        private readonly Pen _ActiveNibblePen;
+        private Pen _ActiveNibblePen;
         private Range? _Selection;
         private HexMessageFilter _HexMessageFilter;
-
-        private float NibbleWidth => CellWidth * 0.5f;
 
         private void HexViewPanel_KeyDown(object sender, KeyEventArgs e)
         {
@@ -1461,6 +1467,7 @@ namespace UEExplorer.UI.Forms
                             case 0:
                                 newByte = (byte)((newByte & 0x0F) | (hexKeyIndex << 4));
                                 SetCellValue(currentCellIndex, newByte);
+                                SetActiveCell(currentCellIndex); // to update the caret blink
                                 _ActiveNibbleIndex = 1;
                                 break;
 
