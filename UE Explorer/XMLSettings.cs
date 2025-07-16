@@ -34,6 +34,7 @@ namespace UEExplorer
         #region THIRDPARY
         public string UEModelAppPath = String.Empty;
         public string HEXWorkshopAppPath = String.Empty;
+        public string ImHexAppPath = String.Empty;
         #endregion
 
         [XmlRoot("State")]

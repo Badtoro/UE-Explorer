@@ -163,7 +163,7 @@
     <value>Vlag waarde</value>
   </data>
   <data name="Label_CookerVersion.Text" xml:space="preserve">
-    <value>Kooker versie</value>
+    <value>Kookversie</value>
   </data>
   <data name="Label_EngineVersion.Text" xml:space="preserve">
     <value>Motor versie</value>
@@ -214,7 +214,7 @@
     <value>Afhankelijkheden</value>
   </data>
   <data name="Button_Export.Text" xml:space="preserve">
-    <value>Exporteer als...</value>
+    <value>Exporteren als...</value>
   </data>
   <data name="dataGridViewTextBoxColumn3.HeaderText" xml:space="preserve">
     <value>UC afstand</value>
@@ -238,7 +238,7 @@
     <value>Exporteer &amp;klassen</value>
   </data>
   <data name="exportScriptClassesToolStripMenuItem.Text" xml:space="preserve">
-    <value>Exporteer &amp;scripts</value>
+    <value>Exporteer &amp;schriften</value>
   </data>
   <data name="toolStripMenuItem1.Text" xml:space="preserve">
     <value>&amp;Zoeken</value>
@@ -275,5 +275,8 @@
   </data>
   <data name="ViewTools.Text" xml:space="preserve">
     <value>Bekijk</value>
+  </data>
+  <data name="recentToolStripDropDownButton.ToolTipText" xml:space="preserve">
+    <value>Historie</value>
   </data>
 </root>

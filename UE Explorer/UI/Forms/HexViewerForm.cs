@@ -11,12 +11,13 @@ namespace UEExplorer.UI.Forms
 {
     public partial class HexViewerForm : Form
     {
-        private readonly string _PackageFilePath;
-        private readonly IBuffered _Target;
+        private readonly string _FilePath;
 
         private HexViewerForm()
         {
             InitializeComponent();
+
+            editToolStripMenuItem.Enabled = false;
 
             WindowState = Settings.Default.HexViewerState;
             Size = Settings.Default.HexViewerSize;
@@ -25,33 +26,45 @@ namespace UEExplorer.UI.Forms
             ViewByteItem.Checked = Settings.Default.HexViewer_ViewByte;
         }
 
-        public HexViewerForm(IBuffered target, string packageFilePath) : this()
+        public HexViewerForm(IBuffered target, string filePath) : this()
         {
-            Debug.Assert(target != null);
-
-            _Target = target;
-            _PackageFilePath = packageFilePath;
-
-            switch (target)
+            if (target == null)
             {
-                case UnrealPackage _:
-                    editToolStripMenuItem.Enabled = false;
-                    break;
+                throw new NullReferenceException("No target for HexViewDialog()");
             }
+
+            _FilePath = filePath;
+
+            HexPanel.OffsetChangedEvent += (selectedOffset, selectionLength) =>
+            {
+                int targetPosition = target.GetBufferPosition();
+                positionToolStripStatusLabel.Text = $@"0x{targetPosition:X}:{targetPosition + (selectedOffset + selectionLength - 1):X}";
+
+                selectionToolStripStatusLabel.Visible = selectedOffset != -1;
+                selectionToolStripStatusLabel.Text = $@"0x{selectedOffset:X}:{selectedOffset + (selectionLength - 1):X} (0x{selectionLength:X} | {selectionLength})";
+            };
+
+            HexPanel.BufferModifiedEvent += () =>
+            {
+                SaveItem.Enabled = true;
+            };
+
+            HexPanel.TargetChangedEvent += (_, newTarget) =>
+            {
+                Text = $@"{Text} - {newTarget.GetBufferId()}";
+
+                SizeLabel.Text = $@"0x{newTarget.GetBufferSize():X}";
+
+                bool canEdit = newTarget is not UnrealPackage;
+                editToolStripMenuItem.Enabled = canEdit;
+                HexPanel.CanEdit = canEdit;
+            };
+
+            HexPanel.SetHexData(target);
         }
 
         private void HexViewerForm_Load(object sender, EventArgs e)
         {
-            SizeLabel.Text = string.Format(SizeLabel.Text,
-                _Target.GetBufferSize().ToString(CultureInfo.InvariantCulture)
-            );
-
-            HexPanel.SetHexData(_Target);
-            Text = $"{Text} - {HexPanel.Target.GetBufferId(true)}";
-
-            OnHexPanelOffsetChanged(0);
-            HexPanel.OffsetChangedEvent += OnHexPanelOffsetChanged;
-            HexPanel.BufferModifiedEvent += () => { SaveItem.Enabled = true; };
         }
 
         private void HexViewDialog_FormClosing(object sender, FormClosingEventArgs e)
@@ -71,17 +84,6 @@ namespace UEExplorer.UI.Forms
                 ? FormWindowState.Normal
                 : WindowState;
             Settings.Default.Save();
-        }
-
-        private void OnHexPanelOffsetChanged(int selectedOffset)
-        {
-            ToolStripStatusLabel_Position.Text = string.Format
-            (
-                Resources.HexView_Position,
-                HexPanel.Target.GetBufferPosition(),
-                selectedOffset,
-                HexPanel.Target.GetBufferPosition()
-            );
         }
 
         private void ViewASCIIToolStripMenuItem_CheckedChanged(object sender, EventArgs e)
@@ -252,33 +254,32 @@ namespace UEExplorer.UI.Forms
         private void ReloadPackage()
         {
             // TEMP: Hacky solution
-            var tab = ((ProgramForm)(Owner)).Tabs.GetTab(_PackageFilePath);
+            var tab = ((ProgramForm)(Owner)).Tabs.GetTab(_FilePath);
             if (tab != null)
             {
                 ((ProgramForm)Owner).Tabs.CloseTab(tab);
             }
-            ((ProgramForm)Owner).LoadFromFile(_PackageFilePath);
+            ((ProgramForm)Owner).LoadFromFile(_FilePath);
             Close();
+            //_PackageExplorer.ReloadPackage();
         }
 
-        private bool ReplaceBuffer(IBuffered target, byte[] buffer)
+        private bool ReplaceBuffer(IBuffered target, byte[] newBuffer)
         {
-            target.GetBuffer().Dispose();
-            string packageFilePath = _PackageFilePath;
-            using (var package = UnrealLoader.LoadPackage(packageFilePath, FileAccess.ReadWrite))
+            string packageFilePath = _FilePath;
+
+            try
             {
-                package.Stream.Seek(target.GetBufferPosition(), SeekOrigin.Begin);
-                try
-                {
-                    package.Stream.Write(buffer, 0, buffer.Length);
-                    package.Stream.Flush();
-                    package.Stream.Dispose();
-                    return true;
-                }
-                catch (IOException exc)
-                {
-                    MessageBox.Show(string.Format(Resources.COULDNT_SAVE_EXCEPTION, exc));
-                }
+                using var fileStream = new FileStream(packageFilePath, FileMode.Open, FileAccess.Write);
+                fileStream.Seek(target.GetBufferPosition(), SeekOrigin.Begin);
+                fileStream.Write(newBuffer, 0, newBuffer.Length);
+                fileStream.Flush();
+
+                return true;
+            }
+            catch (IOException exc)
+            {
+                MessageBox.Show(string.Format(Resources.COULDNT_SAVE_EXCEPTION, exc));
             }
 
             return false;
@@ -326,11 +327,52 @@ namespace UEExplorer.UI.Forms
             }
 
             string appPath = Program.Options.HEXWorkshopAppPath;
-            string filePath = _PackageFilePath;
+            string filePath = _FilePath;
             int pos = HexPanel.Target.GetBufferPosition();
             int size = HexPanel.Target.GetBufferSize();
 
             var appArguments = $"\"{filePath}\" /GOTO:{pos} /SELECT:{size}";
+            var appInfo = new ProcessStartInfo(appPath, appArguments)
+            {
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                CreateNoWindow = false
+            };
+            var app = Process.Start(appInfo);
+        }
+
+        private void imHexToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            bool appExists = File.Exists(Program.Options.ImHexAppPath);
+            if (!appExists)
+            {
+                if (MessageBox.Show(string.Format(Resources.PLEASE_SELECT_PATH, "ImHex"),
+                        Resources.NOT_AVAILABLE, MessageBoxButtons.OKCancel, MessageBoxIcon.Question) ==
+                    DialogResult.Cancel)
+                {
+                    return;
+                }
+
+                var ofd = new OpenFileDialog
+                {
+                    Filter = "ImHex(imhex.exe)|imhex.exe",
+                    FileName = Path.Combine("%ProgramW6432%", "ImHex", "imhex.exe")
+                };
+                if (ofd.ShowDialog() != DialogResult.OK)
+                {
+                    return;
+                }
+
+                Program.Options.ImHexAppPath = ofd.FileName;
+                Program.SaveConfig();
+            }
+
+            string appPath = Program.Options.ImHexAppPath;
+            string filePath = _FilePath;
+            int pos = HexPanel.Target.GetBufferPosition();
+            int size = HexPanel.Target.GetBufferSize();
+
+            var appArguments = $"--open \"{filePath}\" --select 0x{pos:X} 0x{pos + (size - 1):X}";
             var appInfo = new ProcessStartInfo(appPath, appArguments)
             {
                 UseShellExecute = false,

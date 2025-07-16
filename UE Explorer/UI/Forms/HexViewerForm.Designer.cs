@@ -36,6 +36,7 @@
             this.fileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.openInToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.hexWorkshopToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.imHexToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.editToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.SaveItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripSeparator2 = new System.Windows.Forms.ToolStripSeparator();
@@ -56,7 +57,8 @@
             this.helpToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.statusStrip1 = new System.Windows.Forms.StatusStrip();
             this.SizeLabel = new System.Windows.Forms.ToolStripStatusLabel();
-            this.ToolStripStatusLabel_Position = new System.Windows.Forms.ToolStripStatusLabel();
+            this.positionToolStripStatusLabel = new System.Windows.Forms.ToolStripStatusLabel();
+            this.selectionToolStripStatusLabel = new System.Windows.Forms.ToolStripStatusLabel();
             this.panel1.SuspendLayout();
             this.menuStrip1.SuspendLayout();
             this.statusStrip1.SuspendLayout();
@@ -81,6 +83,7 @@
             this.HexPanel.AutoValidate = System.Windows.Forms.AutoValidate.EnableAllowFocusChange;
             this.HexPanel.BackColor = System.Drawing.SystemColors.Window;
             this.HexPanel.Buffer = null;
+            this.HexPanel.CanEdit = false;
             this.HexPanel.CellModifiedFont = new System.Drawing.Font("Courier New", 9F, ((System.Drawing.FontStyle)((System.Drawing.FontStyle.Bold | System.Drawing.FontStyle.Italic))));
             resources.ApplyResources(this.HexPanel, "HexPanel");
             this.HexPanel.DrawASCII = true;
@@ -107,7 +110,8 @@
             // openInToolStripMenuItem
             // 
             this.openInToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.hexWorkshopToolStripMenuItem});
+            this.hexWorkshopToolStripMenuItem,
+            this.imHexToolStripMenuItem});
             this.openInToolStripMenuItem.Name = "openInToolStripMenuItem";
             resources.ApplyResources(this.openInToolStripMenuItem, "openInToolStripMenuItem");
             // 
@@ -116,6 +120,12 @@
             this.hexWorkshopToolStripMenuItem.Name = "hexWorkshopToolStripMenuItem";
             resources.ApplyResources(this.hexWorkshopToolStripMenuItem, "hexWorkshopToolStripMenuItem");
             this.hexWorkshopToolStripMenuItem.Click += new System.EventHandler(this.HEXWorkshopToolStripMenuItem_Click);
+            // 
+            // imHexToolStripMenuItem
+            // 
+            this.imHexToolStripMenuItem.Name = "imHexToolStripMenuItem";
+            resources.ApplyResources(this.imHexToolStripMenuItem, "imHexToolStripMenuItem");
+            this.imHexToolStripMenuItem.Click += new System.EventHandler(this.imHexToolStripMenuItem_Click);
             // 
             // editToolStripMenuItem
             // 
@@ -248,7 +258,8 @@
             // 
             this.statusStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.SizeLabel,
-            this.ToolStripStatusLabel_Position});
+            this.positionToolStripStatusLabel,
+            this.selectionToolStripStatusLabel});
             resources.ApplyResources(this.statusStrip1, "statusStrip1");
             this.statusStrip1.Name = "statusStrip1";
             // 
@@ -258,11 +269,17 @@
             this.SizeLabel.Name = "SizeLabel";
             resources.ApplyResources(this.SizeLabel, "SizeLabel");
             // 
-            // ToolStripStatusLabel_Position
+            // positionToolStripStatusLabel
             // 
-            this.ToolStripStatusLabel_Position.BackColor = System.Drawing.Color.Transparent;
-            this.ToolStripStatusLabel_Position.Name = "ToolStripStatusLabel_Position";
-            resources.ApplyResources(this.ToolStripStatusLabel_Position, "ToolStripStatusLabel_Position");
+            this.positionToolStripStatusLabel.BackColor = System.Drawing.Color.Transparent;
+            this.positionToolStripStatusLabel.Name = "positionToolStripStatusLabel";
+            resources.ApplyResources(this.positionToolStripStatusLabel, "positionToolStripStatusLabel");
+            // 
+            // selectionToolStripStatusLabel
+            // 
+            this.selectionToolStripStatusLabel.BackColor = System.Drawing.Color.Transparent;
+            this.selectionToolStripStatusLabel.Name = "selectionToolStripStatusLabel";
+            resources.ApplyResources(this.selectionToolStripStatusLabel, "selectionToolStripStatusLabel");
             // 
             // HexViewerForm
             // 
@@ -294,7 +311,7 @@
 		private System.Windows.Forms.ToolStripMenuItem viewToolStripMenuItem;
 		private System.Windows.Forms.ToolStripMenuItem ViewASCIIItem;
 		private System.Windows.Forms.ToolStripMenuItem ViewByteItem;
-		internal System.Windows.Forms.ToolStripStatusLabel ToolStripStatusLabel_Position;
+		internal System.Windows.Forms.ToolStripStatusLabel positionToolStripStatusLabel;
 		private System.Windows.Forms.ToolStripMenuItem editToolStripMenuItem;
 		private System.Windows.Forms.ToolStripMenuItem CopyBytesItem;
 		private System.Windows.Forms.ToolStripMenuItem CopyHexViewItem;
@@ -314,6 +331,7 @@
         private System.Windows.Forms.ToolStripMenuItem fileToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem openInToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem hexWorkshopToolStripMenuItem;
-
-	}
+        private System.Windows.Forms.ToolStripMenuItem imHexToolStripMenuItem;
+        internal System.Windows.Forms.ToolStripStatusLabel selectionToolStripStatusLabel;
+    }
 }
