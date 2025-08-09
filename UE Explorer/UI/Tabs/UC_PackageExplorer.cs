@@ -193,6 +193,8 @@ namespace UEExplorer.UI.Tabs
                         && signature != 0x9E2A83C2
                         // Hawken
                         && signature != 0xEA31928C
+                        // ArcticCombat
+                        && signature != 0xA1B2C93F
                     ))
                 {
                     if (MessageBox.Show(
