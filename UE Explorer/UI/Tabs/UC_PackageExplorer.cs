@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Drawing;
 using System.Globalization;
@@ -33,9 +34,21 @@ namespace UEExplorer.UI.Tabs
         /// </summary>
         private UnrealPackage _UnrealPackage;
 
+        private Keys _FindNextShortcutKeys;
+        private Keys _ViewBufferShortcutKeys;
+        private Keys _FindInClassesShortcutKeys;
+        private Keys _FindInDocumentShortcutKeys;
+
         public UC_PackageExplorer()
         {
             InitializeComponent();
+
+            var resources = new ComponentResourceManager(typeof(UC_PackageExplorer));
+
+            _FindNextShortcutKeys = (Keys)resources.GetObject("findNextToolStripMenuItem.ShortcutKeys");
+            _ViewBufferShortcutKeys = (Keys)resources.GetObject("viewBufferToolStripMenuItem.ShortcutKeys");
+            _FindInClassesShortcutKeys = (Keys)resources.GetObject("findInClassesToolStripMenuItem.ShortcutKeys");
+            _FindInDocumentShortcutKeys = (Keys)resources.GetObject("findInDocumentToolStripMenuItem.ShortcutKeys");
         }
 
         private void UC_PackageExplorer_Load(object sender, EventArgs e)
@@ -1631,6 +1644,14 @@ namespace UEExplorer.UI.Tabs
             {
                 findDialog.ShowDialog();
             }
+        }
+
+        public override void TabSelected(bool isSelected)
+        {
+            findNextToolStripMenuItem.ShortcutKeys = isSelected ? _FindNextShortcutKeys : Keys.None;
+            viewBufferToolStripMenuItem.ShortcutKeys = isSelected ? _ViewBufferShortcutKeys : Keys.None;
+            findInClassesToolStripMenuItem.ShortcutKeys = isSelected ? _FindInClassesShortcutKeys : Keys.None;
+            findInDocumentToolStripMenuItem.ShortcutKeys = isSelected ? _FindInDocumentShortcutKeys : Keys.None;
         }
 
         private struct BufferData
