@@ -163,7 +163,7 @@
             // OpenNTLDialog
             // 
             this.OpenNTLDialog.DefaultExt = "u";
-            this.OpenNTLDialog.Filter = "UnrealScript(*.u)|*.u";
+            this.OpenNTLDialog.Filter = "UnrealScript(*.u)|*.u|All Files (*.*)|*.*";
             this.OpenNTLDialog.Multiselect = true;
             this.OpenNTLDialog.Title = "NTL File Dialog";
             // 
