@@ -41,6 +41,27 @@ However many games may have modified the engine to some extent.
 
 A list of games that have been confirmed to work can be viewed [here](https://github.com/EliotVU/Unreal-Library).
 
+## Gears of War 3 T3D dumper
+
+This repository now includes a minimal exporter that converts Gears of War 3
+map packages (`.xxx`) into human-readable Unreal text (`.t3d`).
+
+### Usage
+
+```
+dotnet run --project Eliot.UELib.Demo <path/to/map.xxx> [output.t3d]
+```
+
+### Sample
+
+A tiny example is provided under `samples/ExampleMap.xxx` together with its
+generated `samples/ExampleMap.t3d` output.
+
+### Limitations
+
+The dumper only demonstrates the workflow. Compression handling and full actor
+and geometry decoding are greatly simplified compared to the real game files.
+
 ## How to contribute
 
 The project is built on the .NET Framework 4.8 WinForms library using C#.

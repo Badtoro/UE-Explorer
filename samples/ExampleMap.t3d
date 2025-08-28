@@ -1,0 +1,5 @@
+// Generated from ExampleMap.xxx
+Begin Actor Class=GearsActor Name=ActorOne
+End Actor
+Begin Actor Class=GearsActor Name=ActorTwo
+End Actor

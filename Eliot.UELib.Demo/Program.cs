@@ -1,44 +1,28 @@
-﻿using System;
-using UELib;
-using System.Windows.Forms;
+using System;
 using System.IO;
+using UEExplorer.Exporters;
 
 namespace Eliot.UELib.Demo
 {
-    class Program
+    /// <summary>
+    /// Small console front-end that exposes the GearT3DDumper. It accepts a
+    /// Gears of War 3 map file (.xxx) and writes a .t3d file to disk.
+    /// </summary>
+    internal static class Program
     {
-        static void Main()
+        private static void Main(string[] args)
         {
-            var source = Path.Combine( Application.StartupPath, "UT3Test.u" );
-            var dest = Path.Combine( Application.StartupPath, "UT3TestSerializeDemo.u" );
-            File.Copy( source, dest, true );
-
-            using( var package = UnrealLoader.LoadFullPackage( dest, FileAccess.ReadWrite ) )
-            { 
-                foreach( var name in package.Names )
-                {
-                    if( name.Name == "Dot" )
-                    {
-                        name.Name = "Aot";
-                    }
-                }
-               
-                var stream = new UPackageStream( dest, FileMode.Open, FileAccess.ReadWrite );
-                stream.PostInit( package );
-
-                package.Serialize( stream );
-                package.Stream.Flush();
+            if (args.Length == 0)
+            {
+                Console.WriteLine("Usage: demo <map.xxx> [output.t3d]");
+                return;
             }
 
-            // Load again and see if the rewriting was effective.
-            using( var package = UnrealLoader.LoadFullPackage( dest, FileAccess.ReadWrite ) )
-            { 
-                if( package.Names.Exists( (name) => name.Name == "Aot" ) )
-                {
-                    Console.WriteLine( "Successfully edited Dot to Aot!" );
-                }
-            }
-            Console.ReadKey();
+            var input = args[0];
+            var output = args.Length > 1 ? args[1] : Path.ChangeExtension(input, ".t3d");
+
+            GearT3DDumper.Dump(input, output);
+            Console.WriteLine($"T3D exported to {output}");
         }
     }
 }
