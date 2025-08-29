@@ -190,6 +190,9 @@
   <data name="menuItem13.Text" xml:space="preserve">
     <value>&amp;Extensies</value>
   </data>
+  <data name="exportMapT3DMenuItem.Text" xml:space="preserve">
+    <value>Map exporteren (.t3d)</value>
+  </data>
   <data name="findToolMenuItem.Text" xml:space="preserve">
     <value>&amp;Zoeken</value>
   </data>

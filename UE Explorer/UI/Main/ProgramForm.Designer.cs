@@ -48,6 +48,7 @@ namespace UEExplorer.UI
             this.menuItem22 = new System.Windows.Forms.ToolStripMenuItem();
             this.toolsMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.menuItem13 = new System.Windows.Forms.ToolStripMenuItem();
+            this.exportMapT3DMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.separator3 = new System.Windows.Forms.ToolStripSeparator();
             this.cacheExtractorMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.separator4 = new System.Windows.Forms.ToolStripSeparator();
@@ -268,6 +269,7 @@ namespace UEExplorer.UI
             // 
             this.toolsMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.menuItem13,
+            this.exportMapT3DMenuItem,
             this.separator3,
             this.cacheExtractorMenuItem,
             this.separator4,
@@ -277,14 +279,20 @@ namespace UEExplorer.UI
             this.toolsMenuItem.Name = "toolsMenuItem";
             resources.ApplyResources(this.toolsMenuItem, "toolsMenuItem");
             this.toolsMenuItem.DropDownOpening += new System.EventHandler(this.ToolsMenuItem_DropDownOpening);
-            // 
+            //
             // menuItem13
-            // 
+            //
             resources.ApplyResources(this.menuItem13, "menuItem13");
             this.menuItem13.Name = "menuItem13";
-            // 
+            //
+            // exportMapT3DMenuItem
+            //
+            this.exportMapT3DMenuItem.Name = "exportMapT3DMenuItem";
+            resources.ApplyResources(this.exportMapT3DMenuItem, "exportMapT3DMenuItem");
+            this.exportMapT3DMenuItem.Click += new System.EventHandler(this.ExportMapT3DMenuItem_Click);
+            //
             // separator3
-            // 
+            //
             this.separator3.Name = "separator3";
             resources.ApplyResources(this.separator3, "separator3");
             // 
@@ -453,6 +461,7 @@ namespace UEExplorer.UI
         private System.Windows.Forms.ToolStripMenuItem saveFileMenuItem;
         private System.Windows.Forms.ToolStripSeparator separator2;
         private System.Windows.Forms.ToolStripMenuItem menuItem13;
+        private System.Windows.Forms.ToolStripMenuItem exportMapT3DMenuItem;
         private System.Windows.Forms.ToolStripSeparator separator3;
         private System.Windows.Forms.ToolStripMenuItem cacheExtractorMenuItem;
         private System.Windows.Forms.ToolStripSeparator separator4;

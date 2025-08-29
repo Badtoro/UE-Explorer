@@ -33,6 +33,8 @@ namespace UEExplorer.UI.Tabs
         /// My Unreal file package!
         /// </summary>
         private UnrealPackage _UnrealPackage;
+        public UnrealPackage Package => _UnrealPackage;
+        public bool CanExportMapT3D => _UnrealPackage?.Objects.OfType<ULevel>().Any( l => l.ExportTable != null ) == true;
 
         private Keys _FindNextShortcutKeys;
         private Keys _ViewBufferShortcutKeys;
