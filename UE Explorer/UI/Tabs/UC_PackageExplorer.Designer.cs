@@ -35,6 +35,7 @@
             this.checkBox1 = new System.Windows.Forms.CheckBox();
             this.exportDecompiledClassesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.exportScriptClassesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.exportMapT3DToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.splitContainer1 = new System.Windows.Forms.SplitContainer();
             this.Panel_Main = new System.Windows.Forms.Panel();
             this.panel1 = new System.Windows.Forms.Panel();
@@ -352,7 +353,8 @@
             exportingToolStripMenuItem.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
             exportingToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.exportDecompiledClassesToolStripMenuItem,
-            this.exportScriptClassesToolStripMenuItem});
+            this.exportScriptClassesToolStripMenuItem,
+            this.exportMapT3DToolStripMenuItem});
             resources.ApplyResources(exportingToolStripMenuItem, "exportingToolStripMenuItem");
             exportingToolStripMenuItem.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(20)))), ((int)(((byte)(20)))), ((int)(((byte)(20)))));
             exportingToolStripMenuItem.Name = "exportingToolStripMenuItem";
@@ -364,10 +366,16 @@
             this.exportDecompiledClassesToolStripMenuItem.Name = "exportDecompiledClassesToolStripMenuItem";
             // 
             // exportScriptClassesToolStripMenuItem
-            // 
+            //
             resources.ApplyResources(this.exportScriptClassesToolStripMenuItem, "exportScriptClassesToolStripMenuItem");
             this.exportScriptClassesToolStripMenuItem.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(20)))), ((int)(((byte)(20)))), ((int)(((byte)(20)))));
             this.exportScriptClassesToolStripMenuItem.Name = "exportScriptClassesToolStripMenuItem";
+            //
+            // exportMapT3DToolStripMenuItem
+            //
+            resources.ApplyResources(this.exportMapT3DToolStripMenuItem, "exportMapT3DToolStripMenuItem");
+            this.exportMapT3DToolStripMenuItem.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(20)))), ((int)(((byte)(20)))), ((int)(((byte)(20)))));
+            this.exportMapT3DToolStripMenuItem.Name = "exportMapT3DToolStripMenuItem";
             // 
             // splitContainer1
             // 
@@ -1272,8 +1280,9 @@
 		private System.Windows.Forms.Panel Panel_Main;
 		private System.Windows.Forms.ToolStrip ToolStrip_Main;
 		private System.Windows.Forms.ToolStripDropDownButton _Tools_StripDropDownButton;
-		public System.Windows.Forms.ToolStripMenuItem exportDecompiledClassesToolStripMenuItem;
+        public System.Windows.Forms.ToolStripMenuItem exportDecompiledClassesToolStripMenuItem;
         public System.Windows.Forms.ToolStripMenuItem exportScriptClassesToolStripMenuItem;
+        public System.Windows.Forms.ToolStripMenuItem exportMapT3DToolStripMenuItem;
 		internal System.Windows.Forms.TabPage TabPage_Objects;
         internal System.Windows.Forms.TabPage TabPage_Classes;
 		internal System.Windows.Forms.TabPage TabPage_Deps;

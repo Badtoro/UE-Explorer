@@ -198,6 +198,11 @@ If you happen to move the "UE Explorer" folder, uninstall or update it, then ple
 
 Click Yes if you want to go to the output directory!</value>
   </data>
+  <data name="EXPORTED_MAP_T3D" xml:space="preserve">
+    <value>Exported map of {0} to {1}
+
+Click Yes if you want to go to the output directory!</value>
+  </data>
   <data name="HexView_COULDNT_ACQUIRE_VALUE" xml:space="preserve">
     <value>Couldn't acquire value</value>
   </data>

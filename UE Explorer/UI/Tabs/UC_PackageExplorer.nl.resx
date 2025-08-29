@@ -240,6 +240,9 @@
   <data name="exportScriptClassesToolStripMenuItem.Text" xml:space="preserve">
     <value>Exporteer &amp;schriften</value>
   </data>
+  <data name="exportMapT3DToolStripMenuItem.Text" xml:space="preserve">
+    <value>Exporteer &amp;T3D</value>
+  </data>
   <data name="toolStripMenuItem1.Text" xml:space="preserve">
     <value>&amp;Zoeken</value>
   </data>

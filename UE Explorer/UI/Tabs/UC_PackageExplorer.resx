@@ -720,6 +720,15 @@
   <data name="exportScriptClassesToolStripMenuItem.Text" xml:space="preserve">
     <value>Export &amp;Scripts</value>
   </data>
+  <data name="exportMapT3DToolStripMenuItem.Font" type="System.Drawing.Font, System.Drawing">
+    <value>Segoe UI, 9pt</value>
+  </data>
+  <data name="exportMapT3DToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>149, 22</value>
+  </data>
+  <data name="exportMapT3DToolStripMenuItem.Text" xml:space="preserve">
+    <value>Export &amp;T3D</value>
+  </data>
   <data name="exportingToolStripMenuItem.Font" type="System.Drawing.Font, System.Drawing">
     <value>Segoe UI, 9pt</value>
   </data>
