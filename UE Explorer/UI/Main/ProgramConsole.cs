@@ -63,8 +63,9 @@ namespace UEExplorer.UI.Main
                         break;
 
                     case "export":
-                    { 
+                    {
                         bool shouldExportScripts = false;
+                        bool exportT3D = false;
                         switch( secondary )
                         {
                             case "classes":
@@ -72,6 +73,10 @@ namespace UEExplorer.UI.Main
 
                             case "scripts":
                                 shouldExportScripts = true;
+                                break;
+
+                            case "t3d":
+                                exportT3D = true;
                                 break;
 
                             default:
@@ -83,8 +88,10 @@ namespace UEExplorer.UI.Main
                         {
                             Console.WriteLine( Resources.EXPORTING_PACKAGE, filePath );
                             using( var package = UnrealLoader.LoadFullPackage( filePath ) )
-                            { 
-                                var exportPath = package.ExportPackageClasses( shouldExportScripts );
+                            {
+                                var exportPath = exportT3D
+                                    ? package.ExportMapT3D()
+                                    : package.ExportPackageClasses( shouldExportScripts );
                                 Console.WriteLine( Resources.PACKAGE_EXPORTED_TO, exportPath );
                             }
                         }

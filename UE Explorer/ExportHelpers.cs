@@ -82,5 +82,32 @@ namespace UEExplorer
             package.CreateUPKGFile( exportPath );
             return exportPath;
         }
+
+        public static string ExportMapT3D( this UnrealPackage package )
+        {
+            Program.LoadConfig();
+            string exportPath = package.InitializeExportDirectory();
+
+            try
+            {
+                var level = package.Objects.OfType<ULevel>().FirstOrDefault( l => l.ExportTable != null );
+                if( level != null )
+                {
+                    var t3dContent = level.ExportToT3D();
+                    File.WriteAllText(
+                        Path.Combine( exportPath, package.PackageName + ".t3d" ),
+                        t3dContent,
+                        UnrealEncoding.ANSI
+                    );
+                }
+            }
+            catch( Exception e )
+            {
+                Console.WriteLine( "Couldn't export map to T3D\r\n" + e );
+            }
+
+            package.CreateUPKGFile( exportPath );
+            return exportPath;
+        }
     }
 }
