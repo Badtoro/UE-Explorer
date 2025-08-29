@@ -94,10 +94,17 @@ namespace UEExplorer
                 var level = package.Objects.OfType<ULevel>().FirstOrDefault( l => l.ExportTable != null );
                 if( level != null )
                 {
-                    var t3dContent = level.ExportToT3D();
+                    var t3dBuilder = new StringBuilder();
+                    t3dBuilder.Append( level.ExportToT3D() );
+                    if( level.Model != null )
+                    {
+                        t3dBuilder.AppendLine();
+                        t3dBuilder.Append( level.Model.ExportToT3D() );
+                    }
+
                     File.WriteAllText(
                         Path.Combine( rootPath, package.PackageName + ".t3d" ),
-                        t3dContent,
+                        t3dBuilder.ToString(),
                         UnrealEncoding.ANSI
                     );
                 }
