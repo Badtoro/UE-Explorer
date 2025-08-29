@@ -24,8 +24,8 @@ namespace UEExplorer
                 var files = Directory.GetFiles( exportPath );
                 foreach( var file in files )
                 {
-                    File.Delete( exportPath + file );
-                }			
+                    File.Delete( file );
+                }
             }
             var classPath = Path.Combine( exportPath, ClassesDir );
             Directory.CreateDirectory( classPath );
@@ -81,6 +81,41 @@ namespace UEExplorer
             }
             package.CreateUPKGFile( exportPath );
             return exportPath;
+        }
+
+        public static string ExportMapT3D( this UnrealPackage package )
+        {
+            Program.LoadConfig();
+            string classPath = package.InitializeExportDirectory();
+            var rootPath = Path.GetDirectoryName( classPath );
+
+            try
+            {
+                var level = package.Objects.OfType<ULevel>().FirstOrDefault( l => l.ExportTable != null );
+                if( level != null )
+                {
+                    var t3dBuilder = new StringBuilder();
+                    t3dBuilder.Append( level.ExportToT3D() );
+                    if( level.Model != null )
+                    {
+                        t3dBuilder.AppendLine();
+                        t3dBuilder.Append( level.Model.ExportToT3D() );
+                    }
+
+                    File.WriteAllText(
+                        Path.Combine( rootPath, package.PackageName + ".t3d" ),
+                        t3dBuilder.ToString(),
+                        UnrealEncoding.ANSI
+                    );
+                }
+            }
+            catch( Exception e )
+            {
+                Console.WriteLine( "Couldn't export map to T3D\r\n" + e );
+            }
+
+            package.CreateUPKGFile( rootPath );
+            return rootPath;
         }
     }
 }

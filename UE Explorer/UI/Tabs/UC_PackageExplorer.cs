@@ -33,6 +33,8 @@ namespace UEExplorer.UI.Tabs
         /// My Unreal file package!
         /// </summary>
         private UnrealPackage _UnrealPackage;
+        public UnrealPackage Package => _UnrealPackage;
+        public bool CanExportMapT3D => _UnrealPackage?.Objects.OfType<ULevel>().Any( l => l.ExportTable != null ) == true;
 
         private Keys _FindNextShortcutKeys;
         private Keys _ViewBufferShortcutKeys;
@@ -494,6 +496,7 @@ namespace UEExplorer.UI.Tabs
             ProgressStatus.SetStatus( Resources.INITIALIZING_UI );
             exportDecompiledClassesToolStripMenuItem.Click += _OnExportClassesClick;
             exportScriptClassesToolStripMenuItem.Click += _OnExportScriptsClick;
+            exportMapT3DToolStripMenuItem.Click += _OnExportMapT3DClick;
             
             InitializeTabs();
 
@@ -554,6 +557,11 @@ namespace UEExplorer.UI.Tabs
             if (_UnrealPackage.Summary.CompressedChunks == null || _UnrealPackage.Summary.CompressedChunks.Count == 0)
             {
                 TabControl_Objects.Controls.Remove( TabPage_Chunks );
+            }
+
+            if( !_UnrealPackage.Objects.OfType<ULevel>().Any( l => l.ExportTable != null ) )
+            {
+                exportMapT3DToolStripMenuItem.Enabled = false;
             }
         }
 
@@ -863,14 +871,19 @@ namespace UEExplorer.UI.Tabs
         }
 
         private void _OnExportScriptsClick( object sender, EventArgs e )
-        {	
-            DoExportPackageClasses( true );	
+        {
+            DoExportPackageClasses( true );
+        }
+
+        private void _OnExportMapT3DClick( object sender, EventArgs e )
+        {
+            DoExportMapT3D();
         }
 
         private void DoExportPackageClasses( bool exportScripts = false )
         {
             var exportPath = _UnrealPackage.ExportPackageClasses( exportScripts );
-            var dialogResult = MessageBox.Show( 
+            var dialogResult = MessageBox.Show(
                 String.Format( 
                     Resources.EXPORTED_ALL_PACKAGE_CLASSES, 
                     _UnrealPackage.PackageName, 
@@ -878,6 +891,24 @@ namespace UEExplorer.UI.Tabs
                 ), 
                 Application.ProductName,
                 MessageBoxButtons.YesNo 
+            );
+            if( dialogResult == DialogResult.Yes )
+            {
+                Process.Start( exportPath );
+            }
+        }
+
+        private void DoExportMapT3D()
+        {
+            var exportPath = _UnrealPackage.ExportMapT3D();
+            var dialogResult = MessageBox.Show(
+                String.Format(
+                    Resources.EXPORTED_MAP_T3D,
+                    _UnrealPackage.PackageName,
+                    exportPath
+                ),
+                Application.ProductName,
+                MessageBoxButtons.YesNo
             );
             if( dialogResult == DialogResult.Yes )
             {

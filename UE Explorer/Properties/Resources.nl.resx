@@ -213,6 +213,11 @@ Laatste versie: {1}</value>
 
 Klik op ja als je nu naar deze map wilt gebracht worden!</value>
   </data>
+  <data name="EXPORTED_MAP_T3D" xml:space="preserve">
+    <value>Map van {0} is naar {1} geëxporteerd.
+
+Klik op ja als je naar deze map wilt gaan!</value>
+  </data>
   <data name="PACKAGE_IS_COMPRESSED" xml:space="preserve">
     <value>Dit pakket is gecompresseerd! Deze pakketen zijn niet ondersteund.
 Om dit te decompresseren moet je "Unreal Package Decompressor" van Gildor downloaden.

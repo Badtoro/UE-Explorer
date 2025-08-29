@@ -165,6 +165,15 @@ namespace UEExplorer.UI
         {
             toggleFilesAssociationMenuItem.Checked = Program.AreFileTypesRegistered();
 
+            if (Tabs.SelectedComponent is UC_PackageExplorer explorer)
+            {
+                exportMapT3DMenuItem.Enabled = explorer.CanExportMapT3D;
+            }
+            else
+            {
+                exportMapT3DMenuItem.Enabled = false;
+            }
+
             if (menuItem13.Enabled)
             {
                 return;
@@ -330,6 +339,23 @@ namespace UEExplorer.UI
 
         private void CacheExtractorMenuItem_Click(object sender, EventArgs e) =>
             Tabs.InsertTab(typeof(UC_CacheExtractor), Resources.ProgramForm_Cache_Extractor);
+
+        private void ExportMapT3DMenuItem_Click(object sender, EventArgs e)
+        {
+            if (Tabs.SelectedComponent is UC_PackageExplorer explorer)
+            {
+                var package = explorer.Package;
+                var exportPath = package.ExportMapT3D();
+                var dialogResult = MessageBox.Show(
+                    string.Format(Resources.EXPORTED_MAP_T3D, package.PackageName, exportPath),
+                    Application.ProductName,
+                    MessageBoxButtons.YesNo);
+                if (dialogResult == DialogResult.Yes)
+                {
+                    Process.Start(exportPath);
+                }
+            }
+        }
 
         private void TabComponentsStrip_TabStripItemClosing(TabStripItemClosingEventArgs e) => e.Item.Dispose();
 

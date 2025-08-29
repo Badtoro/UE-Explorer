@@ -408,6 +408,12 @@
   <data name="menuItem13.Text" xml:space="preserve">
     <value>&amp;Extensions</value>
   </data>
+  <data name="exportMapT3DMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>208, 22</value>
+  </data>
+  <data name="exportMapT3DMenuItem.Text" xml:space="preserve">
+    <value>Export Map (.t3d)</value>
+  </data>
   <data name="separator3.Size" type="System.Drawing.Size, System.Drawing">
     <value>205, 6</value>
   </data>
@@ -2220,6 +2226,12 @@
     <value>menuItem13</value>
   </data>
   <data name="&gt;&gt;menuItem13.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ToolStripMenuItem, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;exportMapT3DMenuItem.Name" xml:space="preserve">
+    <value>exportMapT3DMenuItem</value>
+  </data>
+  <data name="&gt;&gt;exportMapT3DMenuItem.Type" xml:space="preserve">
     <value>System.Windows.Forms.ToolStripMenuItem, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
   <data name="&gt;&gt;separator3.Name" xml:space="preserve">

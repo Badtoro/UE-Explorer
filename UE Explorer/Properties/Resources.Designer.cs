@@ -219,6 +219,17 @@ namespace UEExplorer.Properties {
                 return ResourceManager.GetString("EXPORTED_ALL_PACKAGE_CLASSES", resourceCulture);
             }
         }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Exported map of {0} to {1}
+        ///
+        ///Click Yes if you want to go to the output directory!.
+        /// </summary>
+        internal static string EXPORTED_MAP_T3D {
+            get {
+                return ResourceManager.GetString("EXPORTED_MAP_T3D", resourceCulture);
+            }
+        }
         
         /// <summary>
         ///   Looks up a localized string similar to Exporting package {0}.
